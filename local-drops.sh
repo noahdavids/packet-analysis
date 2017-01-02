@@ -1,21 +1,26 @@
 #!/bin/bash
 # local-drops.sh begins on the previous line
 #
-# This macro uses tshark to make N+1 passes through a file. The first pass
+# This macro uses tshark to make 2N+1 passes through a file. The first pass
 # identifies all retransmitted TCP segments and extracts the starting sequence
 # number from those segments. Then for each identified segment it finds all
-# segments which include the starting sequence number. The idea is to 
-# determine if the original of a retransmitted segment was seen or not. 
+# segments which include the starting sequence number. It then finds the first
+# ACK for that sequence number.
 #
-# This should be run over a trace that was captured on the receiving host
+# If this macro is run over a trace that was captured on the receiving host 
+# we can see if the original segment was seen amd if so if an ACK was sent. If
+# this macro is run over a trace that was captured in the sending host
+# we can see if an ACK was received before the retransmitted segment was sent
 #
-# Output is in /tmp/foo and has the format
-#     TCP Seq NNNNNNNN DD
-# where
-#   NNNNNNNN     is the sequence number
-#   DD           is a count of the number of times the Sequence number was seen
-#                   A count greater than 1 indicates that the containing
-#                   segment was probably dropped locally -- or that the ACK was #                   sent and dropped.
+# The Output file has the format
+#     TCP Seq NNNNNNN
+#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
+#
+# Multiple frames from the sending IP indicate that the frame was received (or
+# send) multiple times. The placement of the ACK from the receiving IP indicates
+# when the ACK was sent.
 #
 # If the input file is large with many TCP streams it would make sense to first
 # create a file containing just the segments of the TCP stream of interest
@@ -28,7 +33,9 @@
 # started that things get messy.
 
 # Version 1.0 Jan 1 2017
-LOCALDROPSVERSION="1.0_2017-01-01"
+# Version 1.1 Jan 1 2017
+#    Modified to include the ACK packets
+LOCALDROPSVERSION="1.1_2017-01-01"
 
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
 # SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
@@ -91,24 +98,47 @@ if [ $FILTER != "R" -a $FILTER != "Y" ]
 fi
 # I always echo the command and arguments to STDOUT as a sanity check
 
-echo local-drops.sh $FILE $IPSRC $FILTER $OUTFILE
+echo local-drops.sh $FILE $IPSRC $PORT $FILTER $OUTFILE
 
 # Also echo the command, arguments, date and version to the output file
 
-echo local-drops.sh $FILE $IPSRC $FILTER $OUTFILE run on $(date) > $OUTFILE
+echo local-drops.sh $FILE $IPSRC $PORT $FILTER $OUTFILE > $OUTFILE
+echo local-drops.sh run on $(date) >> $OUTFILE
 echo local-drops.sh version $LOCALDROPSVERSION >> $OUTFILE
 echo >> $OUTFILE
 
 
-tshark -r $FILE -$FILTER "ip.src == $IPSRC && tcp.port == $PORT && tcp.analysis.retransmission" -T fields -e tcp.seq > /tmp/local_drops_retrans
+tshark -r $FILE -$FILTER "ip.src == $IPSRC && tcp.port == $PORT && \
+   tcp.analysis.retransmission" -T fields -e tcp.seq \
+   -o tcp.relative_sequence_numbers:FALSE > /tmp/local_drops_retrans
 
 NUMBERRETRANS=$(wc -l /tmp/local_drops_retrans | awk '{print $1}')
 echo Numer of retransmission $NUMBERRETRANS >> $OUTFILE
-echo >> /tmp/foo
+echo >> $OUTFILE
 
 cat /tmp/local_drops_retrans | while read x
 do
-   echo TCP Seq: $x $(tshark -r $FILE -$FILTER "ip.src == $IPSRC && tcp.port == $PORT && tcp.seq <= $x && $x < tcp.nxtseq" | wc -l); done >> $OUTFILE
+
+   tshark -r $FILE -o tcp.relative_sequence_numbers:FALSE \
+                   -o tcp.calculate_timestamps:TRUE \
+       -$FILTER "ip.src == $IPSRC && tcp.port == $PORT && tcp.seq <= $x \
+       && $x < tcp.nxtseq" -T fields -e frame.number -e tcp.time_relative \
+       -e ip.src -e ip.dst -e tcp.seq -e tcp.ack -e tcp.nxtseq \
+       > /tmp/local_drops_frames
+
+   tshark -r $FILE -o tcp.relative_sequence_numbers:FALSE \
+                   -o tcp.calculate_timestamps:TRUE \
+       -$FILTER "ip.dst == $IPSRC && tcp.port == $PORT && tcp.ack > $x" \
+       -T fields -e frame.number -e tcp.time_relative -e ip.src -e ip.dst \
+       -e tcp.seq -e tcp.ack -e tcp.nxtseq | head -1 \
+       >> /tmp/local_drops_frames
+
+   echo TCP Seq: $x >> $OUTFILE
+   cat /tmp/local_drops_frames | sort -nk1 >> $OUTFILE
+   echo >> $OUTFILE
+
+done
 
 rm /tmp/local_drops_retrans
+rm /tmp/local_drops_frames
 
