@@ -121,3 +121,6 @@ cat /tmp/tcp_streams_throughput | column -t >> $OUTFILE
 rm /tmp/tcp_streams
 rm /tmp/tcp_a_stream
 rm /tmp/tcp_streams_throughput
+
+# stream_throughput.sh ends here
+
