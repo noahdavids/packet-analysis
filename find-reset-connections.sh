@@ -16,12 +16,11 @@
 #     <Stream Number> <Src IP> <Src Port> <TCP Seq> <Dest IP< <Dst Port>
 #     <Stream Number> <Src IP> <Src Port> <TCP Seq> <Dest IP< <Dst Port>
 #     <Stream Number> <Src IP> <Src Port> <TCP Seq> <Dest IP< <Dst Port>
-
-# If the sequence number is 0 it is probably an indictaion that the reset
-# was sent in response to a SYN packet.
+#
+# Note if there is no output it means that every stream that had a reset
+# also had a FIN 
 
 # Version 1.0 Jan 29 2017
-
 FINDRESETCONNECTIONSVERSION="1.0_2017-01-29"
 
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY

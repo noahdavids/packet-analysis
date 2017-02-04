@@ -1,7 +1,7 @@
 #!/bin/bash
 # average.sh begins on the previous line
 #
-# Rhis macro averages a value returned from tshark.
+# This macro averages a value returned from tshark.
 #
 # Version 1.0 Jan 2 2017
 LOCALDROPSVERSION="1.0_2017-01-07"
