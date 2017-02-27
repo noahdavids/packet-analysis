@@ -21,7 +21,13 @@
 # also had a FIN 
 
 # Version 1.0 Jan 29 2017
-FINDRESETCONNECTIONSVERSION="1.0_2017-01-29"
+# Version 1.1 Feb 22 2017
+#   Added a final "sort -u" If there are multiple resets with different
+#   sequence numbers and or source IP addresses you end up with a set of
+#   output for each one. So if there are 2 sequence numbers you end up with
+#   4 lines of outputr. THe final "sort -u" removes the duplicates.
+
+FINDRESETCONNECTIONSVERSION="1.1_2017-02-22"
 
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
 # SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
@@ -96,7 +102,7 @@ done > /tmp/fins-and-resets-2.out
 grep "0$" /tmp/fins-and-resets-2.out | while read stream count
      do egrep "^$stream\s+" /tmp/fins-and-resets.out \
      | awk '{print $1 " " $2 " " $3 " " $4 " " $5 " " $6}'
-done | column -t
+done | sort -u | column -t
 
 # clean-up temorary files
 
@@ -104,5 +110,4 @@ rm /tmp/fins-and-resets.out
 rm /tmp/fins-and-resets-2.out
 
 # find-reset-connections.sh ends here
-
 
