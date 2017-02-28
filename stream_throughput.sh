@@ -19,8 +19,12 @@
 # This also does not consider any bytes ACKed via Selective Acknowledgment
 # blocks. 
 #
-# Version 1.0 Jan 2 2017
-LOCALDROPSVERSION="1.0_2017-01-02"
+# Version 1.0 Jan  2 2017
+# Version 1.1 Feb 28 2017
+#   Correct message at start to display the IPSRC argument, it was just
+#   missing from the echo command
+
+LOCALDROPSVERSION="1.1_2017-02-27"
 #
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
 # SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
@@ -70,11 +74,11 @@ fi
 
 # I always echo the command and arguments to STDOUT as a sanity check
 
-echo stream-throughput.sh $FILE $FILTER $OUTFILE
+echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE
 
 # Also echo the command, arguments, date and version to the output file
 
-echo stream-throughput.sh $FILE $FILTER $OUTFILE > $OUTFILE
+echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE > $OUTFILE
 echo stream-throughput.sh run on $(date) >> $OUTFILE
 echo stream-throughput.sh version $LOCALDROPSVERSION >> $OUTFILE
 echo >> $OUTFILE
