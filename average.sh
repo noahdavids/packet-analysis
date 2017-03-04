@@ -4,7 +4,11 @@
 # This macro averages a value returned from tshark.
 #
 # Version 1.0 Jan 2 2017
-LOCALDROPSVERSION="1.0_2017-01-07"
+# Version 1.1 Mar 4 2017
+# Corrected the version environment variable from LOCALDROPSVERSION
+# to AVERAGEVERSION
+AVERAGEVERSION="1.1_2017-03-04"
+
 #
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
 # SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES

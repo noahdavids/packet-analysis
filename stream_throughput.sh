@@ -23,8 +23,10 @@
 # Version 1.1 Feb 28 2017
 #   Correct message at start to display the IPSRC argument, it was just
 #   missing from the echo command
-
-LOCALDROPSVERSION="1.1_2017-02-27"
+# Version 1.2 Mar 04 3017
+#   Corrected the version environment variable from LOCALDROPSVERSION 
+#   to STREAMTHROUGHPUTVERSION
+STREAMTHROUGHPUTVERSION="1.2_2017-03-04"
 #
 # This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
 # SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
@@ -35,6 +37,7 @@ LOCALDROPSVERSION="1.1_2017-02-27"
 # from https://github.com/noahdavids/packet-analysis.git
 
 if [ $# -ne 4 ]
+
    then echo "Usage:"
         echo "   stream-throughput.sh FILE IPSRC TSHARK-FILTER OUTFILE"
         echo "      FILE is the name of the trace file to be analyzed"
@@ -80,7 +83,7 @@ echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE
 
 echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE > $OUTFILE
 echo stream-throughput.sh run on $(date) >> $OUTFILE
-echo stream-throughput.sh version $LOCALDROPSVERSION >> $OUTFILE
+echo stream-throughput.sh version $STREAMTHROUGHPUTVERSION >> $OUTFILE
 echo >> $OUTFILE
 
 # Even though the argument is IP SOURCE we are filtering on ip.dst in the
