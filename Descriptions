@@ -6,3 +6,6 @@ local-drops			For each retransmitted TCP segment determine
                                 if the segment is seen more than once
 stream-throughput.sh		calculate the throughput of all TCP streams
                                 in a trace file
+unterminated-connections.sh	find TCP connections that have not been
+                                closed or reset
+
