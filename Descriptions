@@ -1,13 +1,22 @@
 average.sh			average a value returned by tshark
+-------------------------------------------------------------------------------
 bytes-in-flight.sh		calcuate the bytes in flight after each ACK
+-------------------------------------------------------------------------------
 dns-time.sh			table of DNS server query response times and
 				list of unanswered queries
+-------------------------------------------------------------------------------
 find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
+-------------------------------------------------------------------------------
 local-drops			For each retransmitted TCP segment determine
                                 if the segment is seen more than once
+-------------------------------------------------------------------------------
+start-packet-tracing.sh         runs tcpdump in the background with 10 files
+                                of 100 Meg each. 
+-------------------------------------------------------------------------------
 stream-throughput.sh		calculate the throughput of all TCP streams
                                 in a trace file
+-------------------------------------------------------------------------------
 unterminated-connections.sh	find TCP connections that have not been
                                 closed or reset
 
