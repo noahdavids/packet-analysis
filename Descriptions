@@ -1,5 +1,7 @@
 average.sh			average a value returned by tshark
 bytes-in-flight.sh		calcuate the bytes in flight after each ACK
+dns-time.sh			table of DNS server query response times and
+				list of unanswered queries
 find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
 local-drops			For each retransmitted TCP segment determine
