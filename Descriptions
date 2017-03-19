@@ -11,6 +11,11 @@ find-reset-connections.sh	find TCP connections that have been reset
 local-drops			For each retransmitted TCP segment determine
                                 if the segment is seen more than once
 -------------------------------------------------------------------------------
+packet-matcher.sh		Extracts byte strings from a TCP stream in a 
+				template trace and looks for the strings in a
+				target trace. The goal is to find a match TCP
+				stream in the target trace file
+-------------------------------------------------------------------------------
 start-packet-tracing.sh         runs tcpdump in the background with 10 files
                                 of 100 Meg each. 
 -------------------------------------------------------------------------------
