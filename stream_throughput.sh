@@ -21,20 +21,28 @@
 #
 # Version 1.0 Jan  2 2017
 # Version 1.1 Feb 28 2017
-#   Correct message at start to display the IPSRC argument, it was just
-#   missing from the echo command
+#    Correct message at start to display the IPSRC argument, it was just
+#    missing from the echo command
 # Version 1.2 Mar 04 3017
-#   Corrected the version environment variable from LOCALDROPSVERSION 
-#   to STREAMTHROUGHPUTVERSION
-STREAMTHROUGHPUTVERSION="1.2_2017-03-04"
-#
-# This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
-# SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
-# OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE.  This disclaimer
-# applies, despite any verbal representations of any kind provided by the
-# author or anyone else.
+#    Corrected the version environment variable from LOCALDROPSVERSION 
+#    to STREAMTHROUGHPUTVERSION
+# Version 1.3 Apr 1 2017
+#    Added copyright and GNU GPL statement and disclaimer
 
+STREAMTHROUGHPUTVERSION="1.3_2017-04-01"
+#
 # from https://github.com/noahdavids/packet-analysis.git
+
+# Copyright (C) 2017 Noah Davids
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, version 3, https://www.gnu.org/licenses/gpl-3.0.html
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 if [ $# -ne 4 ]
 

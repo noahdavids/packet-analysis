@@ -8,23 +8,30 @@
 # streams.
 #
 # Version 1.0 March 5, 2017
-UNTERMINATEDCONNECTSIONVERSION="1.0_2017-03-05"
+# Version 1.1 April 1, 2017
+#    Added copyright and GNU GPL statement and disclaimer
 
-# This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
-# SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
-# OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE.  This disclaimer
-# applies, despite any verbal representations of any kind provided by the
-# author or anyone else.
+UNTERMINATEDCONNECTSIONVERSION="1.1_2017-04-01"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
+# Copyright (C) 2017 Noah Davids
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, version 3, https://www.gnu.org/licenses/gpl-3.0.html
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 if [ $# -ne 1 ] && [ $# -ne 2 ]
    then echo "Usage:"
         echo "   unterminated-connections.sh FILE TSHARK-FILTER"
         echo "       FILE is the name of the trace file to be analyzed"
-        echo "       TSHARK-FILTER is an optional filter to limit the packets
-        echo "            and connections to be considered
+        echo "       TSHARK-FILTER is an optional filter to limit the packets"
+        echo "            and connections to be considered"
         echo "Example:"
         echo "   unterminated-connections.sh trace.pcap"
         echo "   unterminated-connections.sh trace.pcap \"tcp.port == 1234\" "

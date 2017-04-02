@@ -20,25 +20,33 @@
 # displayed is the count of template segments found.
 #
 # Version 1.0 March 18, 2017
-# PACKETMATCHERVERSION="1.0_2017-03-18"
-#
-# This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
-# SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
-# OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE.  This disclaimer
-# applies, despite any verbal representations of any kind provided by the
-# author or anyone else.
+# Version 1.1 April 1 2017
+#    Added copyright and GNU GPL statement and disclaimer
 
+# PACKETMATCHERVERSION="1.1_2017-04-01"
+#
 # from https://github.com/noahdavids/packet-analysis.git
+
+# Copyright (C) 2017 Noah Davids
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, version 3, https://www.gnu.org/licenses/gpl-3.0.html
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 if [ $# -ne 6 ]
    then echo "Usage:"
         echo "   packet-matcher.sh TEMPLATE-FILE TARGET-FILE PORT-1 PORT-2 START END"
         echo "       TEMPLATE-FILE is the name of the template trace file"
         echo "       TARGET-FILE is the name of the target trace file"
-        echo "       PORT-1 and PORT-2 are the ports identify the tempate stream
-        echo "       START and END are the start and end of the TCP data that is
-        echo "          extracted from the tempate data and looked for in the target
-        echo "          START must be >= 1.
+        echo "       PORT-1 and PORT-2 are the ports identify the tempate stream"
+        echo "       START and END are the start and end of the TCP data that is"
+        echo "          extracted from the template data and looked for in the target"
+        echo "          START must be >= 1."
    exit
 fi
 

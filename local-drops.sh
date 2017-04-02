@@ -35,15 +35,23 @@
 # Version 1.0 Jan 1 2017
 # Version 1.1 Jan 1 2017
 #    Modified to include the ACK packets
-LOCALDROPSVERSION="1.1_2017-01-01"
+# Version 1.2 Apr 1 2017
+#    Added copyright and GNU GPL statement and disclaimer
 
-# This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
-# SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
-# OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE.  This disclaimer
-# applies, despite any verbal representations of any kind provided by the
-# author or anyone else.
+LOCALDROPSVERSION="1.2_2017-04-01"
 
 # from https://github.com/noahdavids/packet-analysis.git
+
+# Copyright (C) 2017 Noah Davids
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, version 3, https://www.gnu.org/licenses/gpl-3.0.html
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 if [ $# -ne 5 ]
    then echo "Usage:"

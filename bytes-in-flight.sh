@@ -18,23 +18,30 @@
 #
 # Version 1.0 February 4, 2017
 # Version 1.1 February 16, 2017
-#  swapped TSHARK-FILTER and OUTPUT-FILE is the usage message and  added
-#  "not tcp.flags.syn == 1" to filter out the SYN segment because tshark
-#  does not include tcp.len in the SYN segment so that segment is short a
-#  field which screws everything up. Also changed display to show after
-#  the sender sends data so if there are multiple sends without an ACK you
-#  can see the bytes in flight go up. Added the available window calculation
-# which is the last window minus the bytes in flight
+#    swapped TSHARK-FILTER and OUTPUT-FILE is the usage message and  added
+#    "not tcp.flags.syn == 1" to filter out the SYN segment because tshark
+#    does not include tcp.len in the SYN segment so that segment is short a
+#    field which screws everything up. Also changed display to show after
+#    the sender sends data so if there are multiple sends without an ACK you
+#    can see the bytes in flight go up. Added the available window calculation
+#    which is the last window minus the bytes in flight
+# Version 1.2 April 1, 2017
+#    Added copyright and GNU GPL statement and disclaimer
 #
-BYTESINFLIGHTVERSION="1.1_2017-02-16"
+BYTESINFLIGHTVERSION="1.2_2017-04-01"
 #
-# This software is provided on an "AS IS" basis, WITHOUT ANY WARRANTY OR ANY
-# SUPPORT OF ANY KIND. The AUTHOR SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES
-# OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE.  This disclaimer
-# applies, despite any verbal representations of any kind provided by the
-# author or anyone else.
-
 # from https://github.com/noahdavids/packet-analysis.git
+
+# Copyright (C) 2017 Noah Davids
+
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, version 3, https://www.gnu.org/licenses/gpl-3.0.html
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
 if [ $# -ne 7 ]
    then echo "Usage:"
