@@ -45,9 +45,9 @@
 # were no segments with relative ACK or SEQ numbers greater than 1 then
 # counting it as failed BUT this would miss scenario 6.
 
-# Version 1.0 April 1, 2017
+# Version 1.0 April 2, 2017
 
-FAILEDCONNECTIONATTEMPTSVERSION="1.0_2017-04-01"
+FAILEDCONNECTIONATTEMPTSVERSION="1.0_2017-04-02"
 
 # from https://github.com/noahdavids/packet-analysis.git
 

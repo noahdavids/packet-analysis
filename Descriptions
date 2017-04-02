@@ -8,7 +8,8 @@ dns-time.sh			table of DNS server query response times and
 failed-connection-attempts.sh   find TCP connection attempts that have a failed
                                 There ae 6 failure scenarios, see the comments
                                 for a description.
--------------------------------------------------------------------------------find-reset-connections.sh	find TCP connections that have been reset
+-------------------------------------------------------------------------------
+find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
 -------------------------------------------------------------------------------
 local-drops			For each retransmitted TCP segment determine
