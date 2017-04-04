@@ -15,6 +15,11 @@
 #      back a SYN-ACK. This is due to listen backlog overflow.
 #   6. response is an ACK instead of a SYN-ACK beacuse of port reuse and the
 #      the previous connection is in TIME-WAIT state.
+#   7. If the connection fails because the SYN-ACK is not reaching the client we
+#      can have the scenario where the client gives up retransmitting SYNs while the
+#      server is still retransmitting SYN-ACKs. If the client then starts a new
+#      connection using the same client port number we have the server responding to
+#      the SYN with an ACK and then retransmitting the SYN-ACK.
 
 # Note just because a TCP stream does not include a SYN-ACK doesn't mean the
 # connection attempt failed. It is possible that the SYN-ACK is not captured
@@ -25,7 +30,8 @@
 # it looks for TCP segments from the server. If there are no packets from the
 # server we are into scenarios 1, 2 or maybe 3. It then looks for segments
 # from the server with the ACK bit and multiple different other flags, i.e. 
-# ACK-PSH, ACK-RST, ACK-SYN or ACK-FIN. If there are segments with at least 2 # combinationsthe connection had to have been successful. If not the
+# ACK-PSH, ACK-RST, ACK-SYN or ACK-FIN. If there are segments with at least 2
+# combinationsthe connection had to have been successful. If not the
 # connection has failed -- maybe. If the only segment is a reset with or
 # without the ACK flag set I am going to assume we are into scenario 4. If the
 # only ACK segment is a ACK-SYN I am going to assume scenario 5. If the only
@@ -44,6 +50,7 @@
 # conclusion. I considered looking at each stream with a SYN and if there 
 # were no segments with relative ACK or SEQ numbers greater than 1 then
 # counting it as failed BUT this would miss scenario 6.
+
 
 # Version 1.0 April 2, 2017
 
@@ -73,7 +80,7 @@ fi
 
 # just making sure that the file exists.
 
-if [ ! -e $1 ]
+if [ ! -e "$1" ]
    then echo "Could not find input file $1"
    exit
 fi
@@ -107,13 +114,15 @@ fi
 if [ $# -eq 2 ]
    then
      tshark -r "$FILE" $DASH "tcp && not icmp && ($2)" -T fields \
-       -e tcp.stream -e ip.src -e ip.dst -e tcp.flags 2>/dev/null| \
-       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4}' \
+       -e tcp.stream -e ip.src -e ip.dst -e tcp.flags -e tcp.ack \
+       -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
+       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
        > /tmp/failed-connection-attempts-1
 else
-     tshark -r "$FILE" $DASH "tcp && not icmp" -T fields -e tcp.stream \
-       -e ip.src -e ip.dst -e tcp.flags 2>/dev/null | \
-       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4}' \
+     tshark -r "$FILE" $DASH "tcp && not icmp" -T fields -e tcp.stream -e ip.src \
+       -e ip.dst -e tcp.flags -e tcp.ack \
+       -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
+       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
        > /tmp/failed-connection-attempts-1
 fi
 
@@ -171,15 +180,19 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
       elif [ $(cat /tmp/failed-connection-attempts-3 | wc -l) -eq 0 ]
          then echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
 
-# there is more than 1 type of packet with the ACK flag set, will be ACK-PSH, # ACK-RST, ACK-SYN or ACK-FIN If it were just ACK-RST or just ACK-SYN this
-# would be a failed connection attempt but because there are at least 2
-# different ACKs we can assume that this is an established connection. This
-# should eliminate the established connections. Refer to my final note in the
-# comments at the begining of this script.
+# there is more than 1 type of packet with the ACK flag set, will be ACK-PSH, ACK-RST,
+# ACK-SYN or ACK-FIN If it were just ACK-RST or just ACK-SYN this would be a failed
+# connection attempt without question but because there are at least 2 different ACKs
+# it could scenario 7. If the first relative ACK is greater than 65535 it it most likely 
+# likely the case so I add the stream index to the suspect list.
 
       elif [ $(awk '($4 == "1") {print $0}' /tmp/failed-connection-attempts-3 \
          | wc -l) -gt 1 ]
-         then echo "" >/dev/null
+         then grep "$stream" /tmp/failed-connection-attempts-1 \
+                   > /tmp/failed-connection-attempts-6 
+              head -1 /tmp/failed-connection-attempts-6 | \
+                   awk '($5 > 65535) {print $1}' | tr "_" " " \
+                   >> /tmp/failed-connection-attempts-5
 
 # We have a reset, with or without an ACK, either way that is all we have so a
 # failed connection attempt. Write the stream to temp file -4.
@@ -209,8 +222,8 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
 
 # clean up the temporary files and echo results
 
-rm /tmp/failed-connection-attempts-1
-rm /tmp/failed-connection-attempts-2
+# rm /tmp/failed-connection-attempts-1
+# rm /tmp/failed-connection-attempts-2
 
 if [ -e /tmp/failed-connection-attempts-3 ]
    then rm /tmp/failed-connection-attempts-3
