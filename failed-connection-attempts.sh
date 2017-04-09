@@ -40,21 +40,23 @@
 # sent to it from the client and the trace was stopped before the client
 # disconnected. These connections are marked as suspect.
 #
-# Output is a single column table of TCP Stream numbers of failed
-# connections. If there are suspect streams they following in a second table.
+# Output is 3 columns, the keyword scenario, the scenario index and then the TCP Stream # numbers of the failed connections. If there are suspect streams they following in a
+# second table.
 #
 # One final note. This script will count as a valid connection a TCP stream
 # with a ACK-SYN from the server followed by a ACK-FIN or an ACK-RST from 
 # the server. This is a connection that is accepted at the TCP layer and
 # immediately closed at the application layer. Clients may disagree with this
-# conclusion. I considered looking at each stream with a SYN and if there 
-# were no segments with relative ACK or SEQ numbers greater than 1 then
-# counting it as failed BUT this would miss scenario 6.
+# conclusion.
 
 
 # Version 1.0 April 2, 2017
+# Version 1.1 April 3, 2017
+#  Added scenario 7
+# Version 1.2 April 9, 2017
+#  Added labels to each TCP stream number indicating the scenario.
 
-FAILEDCONNECTIONATTEMPTSVERSION="1.0_2017-04-02"
+FAILEDCONNECTIONATTEMPTSVERSION="1.2_2017-04-09"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -170,7 +172,7 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
 # stream value and write the value into temp file -4.
 
       if [ ! -e /tmp/failed-connection-attempts-3 ]
-         then echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
+         then echo Scenario 1/2/3 $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
 
 # file is empty so again nothing from server was seen. I suspect that for any
 # given system running this script we will have either this case or the
@@ -178,20 +180,22 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
 # same way so I am covering both cases. 
 
       elif [ $(cat /tmp/failed-connection-attempts-3 | wc -l) -eq 0 ]
-         then echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
+         then echo Scenario 1/2/3 $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
 
 # there is more than 1 type of packet with the ACK flag set, will be ACK-PSH, ACK-RST,
 # ACK-SYN or ACK-FIN If it were just ACK-RST or just ACK-SYN this would be a failed
 # connection attempt without question but because there are at least 2 different ACKs
 # it could scenario 7. If the first relative ACK is greater than 65535 it it most likely 
-# likely the case so I add the stream index to the suspect list.
+# likely scenario 7 so I add the stream index to the suspect list. If the first
+# relative ack is < 65535 I am considering it as a valid connection. There is some
+# small probability 0.000015259 (65535÷4294967295) that this is incorrect.
 
       elif [ $(awk '($4 == "1") {print $0}' /tmp/failed-connection-attempts-3 \
          | wc -l) -gt 1 ]
          then grep "$stream" /tmp/failed-connection-attempts-1 \
                    > /tmp/failed-connection-attempts-6 
               head -1 /tmp/failed-connection-attempts-6 | \
-                   awk '($5 > 65535) {print $1}' | tr "_" " " \
+                   awk '($5 > 65535) {print "Scenario 7 " $1}' | tr "_" " " \
                    >> /tmp/failed-connection-attempts-5
 
 # We have a reset, with or without an ACK, either way that is all we have so a
@@ -199,7 +203,7 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
 
       elif [ $(awk '($5 == "4") {print $0}' /tmp/failed-connection-attempts-3 \
          | wc -l) -gt 0 ]
-         then echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
+         then echo Scenario 4 $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
 
 # We have a ACK-SYN but no other ACKs, so this is a failed connection.
 # Probably a listen backlog overflow. The client thinks its an established
@@ -207,15 +211,15 @@ awk '($4 == "0" && $5 == "2") {print $1 " " $2 " " $3}' /tmp/failed-connection-a
 
       elif [ $(awk '($4 == "1" && $5 == "2") {print $0}' \
          /tmp/failed-connection-attempts-3 | wc -l) -gt 0 ]
-         then echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
+         then echo Scenario 5 $stream | tr "_" " " >> /tmp/failed-connection-attempts-4
 
 # we have an ACK and nothing else this could be valid, it is possible that
-# the ACK-SYN was dropped from the trace. Lable it as suspect. It is also
-# possible it is scenario 6. You will have to take a look to really be sure
+# the ACK-SYN was dropped from the trace. It is also possible it is scenario 6.
+# Labeling it as suspect.
 
       else [ $(awk '($4 == "1" && ($5 == "8" || $5 == "0")) {print $0}' \
          /tmp/failed-connection-attempts-3 | wc -l) -gt 0 ]
-         echo $stream | tr "_" " " >> /tmp/failed-connection-attempts-5
+         echo Scenario 6 $stream | tr "_" " " >> /tmp/failed-connection-attempts-5
       fi
    done
 
