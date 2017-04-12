@@ -55,8 +55,11 @@
 #  Added scenario 7
 # Version 1.2 April 9, 2017
 #  Added labels to each TCP stream number indicating the scenario.
+# Version 1.3 April 11, 2017
+#  fixed bug that incorrectly identified valid connections as scenario 7
+#  if there were more than 999 bytes ACKed by server.
 
-FAILEDCONNECTIONATTEMPTSVERSION="1.2_2017-04-09"
+FAILEDCONNECTIONATTEMPTSVERSION="1.3_2017-04-11"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -108,23 +111,23 @@ then DASH="-R"
 fi
 
 # Call tshark wiriting the TCP stream number, source and destination IP
-# addresses and the TCP flags. Sort the three values removing duplicates and
-# enclose the stream value in "_" characters so that so when we match on
-# stream 10 we do not also select streams 110, 210, 310, etc. Write everything
-# out to temporary file /tmp/fail-connection-attempts-1.
+# addresses and the TCP flags. Enclose the stream value in "_" characters
+# so that so when we match on stream 10 we do not also select streams 110,
+# 210, 310, etc. Write everything out to temporary file
+# /tmp/fail-connection-attempts-1.
 
 if [ $# -eq 2 ]
    then
      tshark -r "$FILE" $DASH "tcp && not icmp && ($2)" -T fields \
        -e tcp.stream -e ip.src -e ip.dst -e tcp.flags -e tcp.ack \
        -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
-       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
+       awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
        > /tmp/failed-connection-attempts-1
 else
      tshark -r "$FILE" $DASH "tcp && not icmp" -T fields -e tcp.stream -e ip.src \
        -e ip.dst -e tcp.flags -e tcp.ack \
        -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
-       sort -u | awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
+       awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5}' \
        > /tmp/failed-connection-attempts-1
 fi
 
@@ -139,12 +142,12 @@ fi
 # B hexit holds the TCP flags, Push, Reset, SYN and FIN. All we really care
 # about is if the ACK flag is set so if the A hext is greater than 1. Print
 # out the TCP stream value, IP source and destinations, either a 1 or a 0
-# depending on the value of the A hexit and yhe value of the B hexit. Write
-# everything to the -2 temp file.
+# depending on the value of the A hexit and the value of the B hexit. Sort the
+# result and removing the duplicates and write to the -2 temp file.
 
 awk '{if (substr ($4, 9, 1) >= 1) print $1 " " $2 " " $3 " 1 " substr ($4, 10, 1); \
-   else print $1 " " $2 " " $3 " 0 " substr ($4, 10, 1)}' /tmp/failed-connection-attempts-1 \
-   > /tmp/failed-connection-attempts-2
+   else print $1 " " $2 " " $3 " 0 " substr ($4, 10, 1)}' \
+   /tmp/failed-connection-attempts-1 | sort -u > /tmp/failed-connection-attempts-2
 
 # We are going to be accummulatinglines into the -4 and -5 temp files. They
 # should not exist but just to be echo echo "" with out the line feed into
