@@ -20,6 +20,14 @@ packet-matcher.sh		Extracts byte strings from a TCP stream in a
 				target trace. The goal is to find a match TCP
 				stream in the target trace file
 -------------------------------------------------------------------------------
+percent-retransmissions.sh	For every connection in the trace file
+				calculate the percentage of retransmissions
+				for every source IP address as 
+				retransmissions / not-retransmitted source
+				segments. segmenst must contain data, i.e.
+				will not identifiy retransmitted SYNs or FINs
+				without data.
+-------------------------------------------------------------------------------
 start-packet-tracing.sh         runs tcpdump in the background with 10 files
                                 of 100 Meg each. 
 -------------------------------------------------------------------------------
