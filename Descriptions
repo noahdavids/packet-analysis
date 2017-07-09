@@ -28,6 +28,12 @@ percent-retransmissions.sh	For every connection in the trace file
 				will not identifiy retransmitted SYNs or FINs
 				without data.
 -------------------------------------------------------------------------------
+split-pcap.py                   Reads X.pcap and creates a set of
+                                X.pcap_IP1-Port1_IP2-Port2_split.pcap files,
+                                one for each TCP four-tuple. Reads only pcap
+                                files not pcapng. Requires Python and the
+                                scapy module.
+-------------------------------------------------------------------------------
 start-packet-tracing.sh         runs tcpdump in the background with 10 files
                                 of 100 Meg each. 
 -------------------------------------------------------------------------------
