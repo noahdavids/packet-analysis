@@ -6,8 +6,7 @@
 # connections will be in the 1 file. The output file name will be the original
 # file name stripped of any directories followed by
 #     _IP1-Port1_IP2-Port2_split.pcap
-# The files are written into the current dirrectory which may not be the
-# same as the directory containing the input file
+# The files are written into the current directory.
 #
 # The script will exit with a warning if it detects files with the same
 # file name as the original file and the suffix _split.pcap. This is because
@@ -48,6 +47,11 @@
 #        being processed. 
 
 # Version 1.0 July 9, 2017
+# Version 1.1 July 9, 2017
+#     Correctetd handling of the file name prefix to strip off any directory
+#     path character  to leave just thefile name. Also the detection of
+#     already existing files to check the current directory and not the input
+#     file source directory.
 #
 # from https://github.com/noahdavids/packet-analysis.git
 #
@@ -98,18 +102,6 @@ else:
    inputFileString = sys.argv [1]
    inputTotalPackets = 0
 
-# Look for inputFileString*_split.pcap files. If you find them print a
-# warning and exit.
-
-t = len (glob (inputFileString + "*_split.pcap"))
-if t > 0:
-   print "There are already " + str (t) + " files with the name " + \
-       inputFileString + "*_split.pcap."
-   print "Delete or rename them or change to a different directory to"
-   print "avoid adding duplicate packets into the " + inputFileString + \
-                                               "*_split.pcap trace files."
-   exit ()
-
 # try opening the file. 
 try:
    pcapIn = PcapReader (inputFileString)
@@ -128,10 +120,22 @@ except NameError:
 # the match fails there are no "/" characters so the whole string must be the
 # name.
 x = re.search ("^.*/(.*$)", inputFileString)
-if type(x) == "_sre.SRE_Match":
+try:
    prefix = x.group(1) + "_"
-else:
+except:
    prefix = inputFileString + "_"
+
+# Look for prefix*_split.pcap files. If you find them print a
+# warning and exit.
+
+t = len (glob (prefix + "*_split.pcap"))
+if t > 0:
+   print "There are already " + str (t) + " files with the name " + \
+       prefix + "*_split.pcap."
+   print "Delete or rename them or change to a different directory to"
+   print "avoid adding duplicate packets into the " + prefix + \
+                                               "*_split.pcap trace files."
+   exit ()
 
 pcapOutName = ""
 oldPcapOutName = ""

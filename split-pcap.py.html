@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>split-pcap.py Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>split-pcap.py Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This script will take a pcap file and split it into multiple files, one per TCP 4-tuple. If the 4-tuple is reused for multiple connections all connections will be in the 1 file. The output file name will be the original file name stripped of any directories followed by _IP1-Port1_IP2-Port2_split.pcap. The files are written into the current directory.
+<p>
+The script will exit with a warning if it detects files with the same file name as the original file and the suffix _split.pcap. This is because the output files are written in append mode so if the script is run over the same file twice it will just add the packets to the existing files and you end up with duplicates.
+<p>
+
+This script only supports pcap formated files. See the usage message for suggestions on converting pcapng files -- or try googling "convert pcapng to pcap"
+<p>
+
+This script requires the modules sys, re (regular expression), logging, glob and scapy. I expect that sys, re, logging, and glob  are installed by default. You will probably have to install scapy. How will vary depending on your OS and what is already installed. You can try:
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp pip install scapy
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp or apt-get install python-scapy
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp or rpm install scapy (from the epel repro)
+<p>
+
+<b><h3>Usage</h3></b>
+split-pcap.py file-name [packet-count]
+<br><br>
+<b>file-name</b>
+<br>
+is the name or path of the file to be processed. This script only supports pcap files, not pcapng. The following commands can be used to convert a pcapng file to pcap format
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp tcpdump -r file.pcapng -w new-file.pcap
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp or tshark -r file.pcapng -w new-file.pcap -F libpcap
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp You can also use editcap with the -F libcap argument 
+<br><br>
+
+<b>packet-count</b>
+<br>
+is optional and is the total number of packets (any protocol) in the file. If packet-count is provided the script will write a line "Percentage done: " for every integer increase in the percentage of the packets processed. If you get the number wrong the percentages will be off but you can multiple the count by 10 to get a line every 10 percent instead of every 1 percent. If packet-count is not provided the script will write a line with the packet count of the packet being processed.
+<br><br>
+
+<b><h3>Examples</h3></b>
+Calling without the packet count argument
+<br><br>
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>
+$ split-pcap.py /packet-trace-library/x.pcap                                   
+1
+2
+3
+. . . . 
+9997
+9998
+9999
+10000
+$
+$ ls | head -5
+x.pcap_10.100.200.123-1500_172.16.184.121-55379_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.121-55380_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51600_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51609_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.123-50999_split.pcap
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Calling with the packet count argument set correctly to 10000
+<br><br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ split-pcap.py /packet-trace-library/x.pcap 10000                             
+Percenage done:  0
+Percenage done:  1
+Percenage done:  2
+Percenage done:  3
+. . . .
+Percenage done:  98
+Percenage done:  99
+Percenage done:  100
+$
+$ ls | head -5
+x.pcap_10.100.200.123-1500_172.16.184.121-55379_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.121-55380_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51600_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51609_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.123-50999_split.pcap
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Calling with the packet count argument set to 100000. The percentage done message is printed for every 10% 
+<br><br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ split-pcap.py /packet-trace-library/x.pcap 100000                            
+Percenage done:  0
+Percenage done:  1
+Percenage done:  2
+Percenage done:  3
+Percenage done:  4
+Percenage done:  5
+Percenage done:  6
+Percenage done:  7
+Percenage done:  8
+Percenage done:  9
+Percenage done:  10
+$
+$ ls | head -5
+x.pcap_10.100.200.123-1500_172.16.184.121-55379_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.121-55380_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51600_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.122-51609_split.pcap
+x.pcap_10.100.200.123-1500_172.16.184.123-50999_split.pcap
+
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Calling when the current directory already has files created from the input file
+<br><br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ split-pcap.py /packet-trace-library/x.pcap 100000                            
+There are already 984 files with the name x.pcap_*_split.pcap.
+Delete or rename them or change to a different directory to
+avoid adding duplicate packets into the x.pcap_*_split.pcap trace files.
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+Calling against a pcapng file and then converting it to a pcap file. Note in this case the input file is in  the current directory.
+<br><br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ split-pcap.py x.pcap 100000                                                  
+It doesn't look like x.pcap is a file that can be processed.
+Note that this script cannot process pcapng files. Review the 
+usage details for ideas on how to convert from pcapng to pcap
+$
+$ tcpdump -r x.pcap -w y.pcap
+reading from file x.pcap, link-type EN10MB (Ethernet)
+$
+$ ../split-pcap.py y.pcap 100000
+Percenage done:  0
+Percenage done:  1
+Percenage done:  2
+Percenage done:  3
+Percenage done:  4
+Percenage done:  5
+Percenage done:  6
+Percenage done:  7
+Percenage done:  8
+Percenage done:  9
+Percenage done:  10
+$
+$ ls | head -5
+x.pcap
+y.pcap
+y.pcap_10.100.200.123-1500_172.16.184.121-55379_split.pcap
+y.pcap_10.100.200.123-1500_172.16.184.121-55380_split.pcap
+y.pcap_10.100.200.123-1500_172.16.184.122-51600_split.pcap
+</pre>
+</td></tr>
+</table>
+Figure 5
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-09</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

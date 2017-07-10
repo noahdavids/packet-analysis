@@ -1,4 +1,5 @@
 average.sh			average a value returned by tshark
+average.sh.html			An HTML description
 -------------------------------------------------------------------------------
 bytes-in-flight.sh		calcuate the bytes in flight after each ACK
 -------------------------------------------------------------------------------
@@ -33,6 +34,7 @@ split-pcap.py                   Reads X.pcap and creates a set of
                                 one for each TCP four-tuple. Reads only pcap
                                 files not pcapng. Requires Python and the
                                 scapy module.
+split-pcap.py.html		An HTML description
 -------------------------------------------------------------------------------
 start-packet-tracing.sh         runs tcpdump in the background with 10 files
                                 of 100 Meg each. 

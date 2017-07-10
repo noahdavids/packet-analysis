@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>average.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>average.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This is a shell script that uses tshark to read a trace file, extract out a tshark variable and
+average the value. It is just a shell script that executes tshark extracts out the variable and then
+pipes it to awk to calculate the average.
+<p>
+
+<b><h3>Usage</h3></b>
+average.sh FILE-NAME TSHARK-FILTER TSHARK-VARIABLE
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be reabale by tshark.
+<br><br>
+<b>TSHARK-FILTER</b>
+<br>
+This is the tshark filter (including either -R or -Y, depending on release) used to select a subnet
+of the packets in the trace file. You must provide this filter. If you want to average over all packets
+in the file you can do something like "-Y frame.number > 0". Note this argument must be enclosed in quotes.
+<br><br>
+<b>TSHARK-VARIABLE</b>
+</br>
+This is the variable to be average
+<br><br>
+
+<b><h3>Examples</h3></b>
+Average the HTTP response time from a server
+<br><br>
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./average.sh test.pcap "-Y http.time && ip.src == 172.16.1.11 && ip.dst == 17
+2.16.1.200" http.time
+
+tshark -r test.pcap "-Y http.time && ip.src == 172.16.1.11 && ip.dst == 172.16.
+1.200" -T fields -e http.time | awk '{sum += $1; n++} END { print sum, "/", n, 
+"=", sum / n}'
+0.778597 / 4 = 0.194649
+</pre>
+</td></tr>
+</table>
+Figure 1 - averaged HTTP response time
+</center>
+<p>
+
+Average the delta time between frames for a given IP address
+<br><br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./average.sh /pacp-library/test2.pcap "-Y ip.src == 172.16.1.200" frame.time_
+delta_displayed
+
+tshark -r /pacp-library/test2.pcap "-Y ip.src == 172.16.1.200" -T fields -e fra
+me.time_delta_displayed | awk '{sum += $1; n++} END { print sum, "/", n, "=", s
+um / n}'
+10.4508 / 39 = 0.267969
+</pre>
+</td></tr>
+</table>
+Figure 2 - averaged delta time between frames
+</center>
+<p>
+
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-09</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
