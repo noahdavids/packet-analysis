@@ -11,7 +11,7 @@
 # At no point will it show 0 bytes in flight. I think this is misleading
 # since you cannot see that the receiver is sending multiple ACKs and the
 # bytes in flight is going down to zero and then the sender sends more data.
-# It also calculates the avialble window by subtracting the bytes in flight 
+# It also calculates the available window by subtracting the bytes in flight 
 # from the last window receivied.
 #
 # The data probably makes more sense when the trace is captured on the sender
@@ -27,8 +27,10 @@
 #    which is the last window minus the bytes in flight
 # Version 1.2 April 1, 2017
 #    Added copyright and GNU GPL statement and disclaimer
-#
-BYTESINFLIGHTVERSION="1.2_2017-04-01"
+# Version 1.3 July 10, 2017
+#     Removed the Filter argument, corrected some typos.
+     
+BYTESINFLIGHTVERSION="1.3_2017-07-10"
 #
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -43,17 +45,15 @@ BYTESINFLIGHTVERSION="1.2_2017-04-01"
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-if [ $# -ne 7 ]
+if [ $# -ne 6 ]
    then echo "Usage:"
         echo "   bytes-in-flight.sh FILE SND-IP SND-PORT DST-IP DST-PORT \
-                   TSHARK-FILTER OUTPUT-FILE"
+                  OUTPUT-FILE"
         echo "      FILE is the name of the trace file to be analyzed"
         echo "      SND-IP is the IP address of the host sending data"
         echo "      SND-PORT is the TCP Port number sending data"
         echo "      DST-IP is the IP address of the host receiving data"
         echo "      DST-PORT is the TCP Port number receiving data"
-        echo "      TSHARK-FILTER is the filter clause including the \
--Y or -R "
         echo "      OUTPUT-FILE is the name of the output file"
         exit
 fi
@@ -63,8 +63,7 @@ SNDIP=$2
 SNDPORT=$3
 DSTIP=$4
 DSTPORT=$5
-FILTER=$6
-OUTPUT=$7
+OUTPUT=$6
 
 if [ ! -e $FILE ]
    then echo "Could not find input file $FILE"
@@ -85,15 +84,14 @@ if [[ ! $DSTIP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
    exit
 fi
 
-if [ $FILTER != "R" -a $FILTER != "Y" ]
-   then echo "Filter string must be either R or Y, $FILTER is not allowed"
-   exit
-fi
-
 # I always echo the command and arguments to STDOUT as a sanity check
 
-echo bytes-in-flight.sh $FILE $SNDIP $SNDPORT $DSTIP $DSTPORT $FILTER $OUTPUT
+echo bytes-in-flight.sh $FILE $SNDIP $SNDPORT $DSTIP $DSTPORT $OUTPUT
 
+DASH="-Y"
+if [ $(tshark -help | egrep "\-Y <display filter>" | wc -l) -eq 0 ]
+then DASH="-R"
+fi
 
 # Filter the trace file for connections matching the SND-IP, SND-PORT,
 # DST-IP, DST-PORT and output the source IP address, TCP sequence
@@ -101,7 +99,7 @@ echo bytes-in-flight.sh $FILE $SNDIP $SNDPORT $DSTIP $DSTPORT $FILTER $OUTPUT
 # frame number. The frame number is to make it easy to go back in the
 # trace and find frames that correspond to areas of interest
  
-tshark -r $FILE -Y "(ip.addr eq $SNDIP and ip.addr eq $DSTIP) and \
+tshark -r $FILE $DASH "(ip.addr eq $SNDIP and ip.addr eq $DSTIP) and \
        (tcp.port eq $SNDPORT and tcp.port eq $DSTPORT) \
        and not tcp.flags.syn == 1" -T fields \
        -e ip.src  -e tcp.seq -e tcp.len -e tcp.ack -e tcp.time_relative \

@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>bytes-in-flight.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>bytes-in-flight.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro finds the bytes in flight after each segment. Basically how many bytes are unACKed. This is slightly different from what Wireshark does. Wireshark shows the bytes in flight from when a packet is sent. For example if there are no outstanding bytes and the sender sends 32,000 bytes (we can assume TCP offloading) Wireshark will show 32,000 bytes in flight. If a series of ACKs acks all bytes and then the sender sends another 32,000 bytes Wireshark will again show 32,000 bytes in flight. At no point will it show 0 bytes in flight. I think this is misleading since you cannot see that the receiver is sending multiple ACKs and the bytes in flight is going down to zero and then the sender sends more data. It also calculates the available window by subtracting the bytes in flight from the last window receivied.
+<p>
+The data probably makes more sense when the trace is captured on the sender.
+<p>
+There must only be 1 TCP connection that match the 4 tuple, i.e. no port reuse.
+<p>
+It is possible to get negative bytes-in-flight values if the "TCP Acked unseen segment" condition occurs.
+
+<b><h3>Usage</h3></b>
+bytes-in-flight.sh bytes-in-flight.sh FILE SND-IP SND-PORT DST-IP DST-PORT OUTPUT-FILE
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be reabale by tshark.
+<br><br>
+<b>SND-IP</b>
+<br>
+Is the IP address of the host sending the data
+<br><br>
+<b>SND-PORT</b>
+<br>
+Is the TCP port number sending the data
+<br><br>
+<b>DST-IP</b>
+<br>
+Is the IP address of the host receiving the data
+<br><br>
+<b>DST-PORT</b>
+<br>
+Is the TCP port number receiving the data
+<br><br>
+<b>OUTPUT-FILE</b>
+<br>
+A file to hold the results. 
+<br><br>
+The output file has the following colums
+
+<ol>
+<li> TCP relative time</li>
+<li>sender's sequence number<br>
+If the segment is from the sender this is the sender's highest sequence number. Note a retransmission will not change this value.  If the segment is from the receiver is is the this number will not change from the previous line</li>
+<li>receiver's ACK number</br>
+If the segment is from the sender this value will not change from the previous line</li>
+<li>BIF: bytes-in-flight<br>
+This is column 2 minus column 3</li>
+<li>Last advertised window from the receiver</li>
+<li>Avail-Window: window<br>
+This is the last advertised window from the sender minus the bytes in flight </li>
+<li>Frame number</li>
+</ol>
+
+<b><h3>Examples</h3></b>
+Example 1 - Execute the bytes-in-flight script and get the output file
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./bytes-in-flight.sh test.pcap 172.16.16.5 2049 172.18.10.1 753 foo
+bytes-in-flight.sh test.pcap 172.16.16.5 2049 172.18.10.1 753 foo
+$
+
+$ (head -10 foo; echo . . . . . ; tail -10 foo) | column -t
+0.000000000  0          -  1          =  BIF:  -1     24571  Avail-Window:  24572  1
+0.000003000  1449       -  1          =  BIF:  1448   24571  Avail-Window:  23123  2
+0.000007000  7433       -  1          =  BIF:  7432   24571  Avail-Window:  17139  3
+0.000013000  7433       -  7433       =  BIF:  0      24571  Avail-Window:  24571  4
+0.000018000  7433       -  7433       =  BIF:  0      24571  Avail-Window:  24571  5
+0.000058000  7433       -  7433       =  BIF:  0      24571  Avail-Window:  24571  6
+0.000079000  7433       -  7433       =  BIF:  0      24571  Avail-Window:  24571  7
+0.000105000  7433       -  7433       =  BIF:  0      24571  Avail-Window:  24571  8
+0.000236000  7549       -  7433       =  BIF:  116    24571  Avail-Window:  24455  9
+.            .          .  .          .
+2.362897000  153639225  -  153639225  =  BIF:  0      24571  Avail-Window:  24571  73864
+2.362943000  153639225  -  153639225  =  BIF:  0      24571  Avail-Window:  24571  73865
+2.362957000  153639225  -  153639225  =  BIF:  0      24571  Avail-Window:  24571  73866
+2.362989000  153640673  -  153639225  =  BIF:  1448   24571  Avail-Window:  23123  73867
+2.363001000  153652465  -  153639225  =  BIF:  13240  24571  Avail-Window:  11331  73868
+2.363016000  153652465  -  153652465  =  BIF:  0      24571  Avail-Window:  24571  73869
+2.363053000  153652465  -  153652465  =  BIF:  0      24571  Avail-Window:  24571  73870
+2.363074000  153656809  -  153652465  =  BIF:  4344   24571  Avail-Window:  20227  73871
+2.363082000  153656809  -  153656809  =  BIF:  0      24571  Avail-Window:  24571  73872
+2.363086000  153669913  -  153656809  =  BIF:  13104  24571  Avail-Window:  11467  73873
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - Find the maximum and average bytes in flight
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ awk '{print $7}' foo | sort -nr | head -1
+299500
+
+$ awk '($7 >= 0) {print $7}' foo | awk '{sum += $1; n++} END { print sum, "/", n, "=", sum / n;}'
+296870044 / 70968 = 4183.15
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - Find the minimum and average available window.
+<br>
+Note that large negative values of available window probably indicate that the hosts are using window scaling but that tshark does not know what the scale factor is.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ awk '{print $10}' foo | sort -n | head -1
+-274929
+
+$ awk '{print $10}' foo | awk '{sum += $1; n++} END { print sum, "/", n, "=", sum / n;}'
+1646380946 / 73874 = 22286.3
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-10</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
