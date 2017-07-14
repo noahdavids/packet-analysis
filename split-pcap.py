@@ -52,6 +52,9 @@
 #     path character  to leave just thefile name. Also the detection of
 #     already existing files to check the current directory and not the input
 #     file source directory.
+# Version 1.2 July 13, 2017
+#     Correcly write the link type for pcap contained Cooked Linux frames
+#     abort for anything other than Ethernet and CookedLinux
 #
 # from https://github.com/noahdavids/packet-analysis.git
 #
@@ -177,7 +180,18 @@ for aPkt in pcapIn:
       if pcapOutName != oldPcapOutName:
          if oldPcapOutName != "":
             pcapOut.close()
-         pcapOut = PcapWriter (pcapOutName, append=True)
+
+         if type(aPkt) == scapy.layers.l2.Ether:
+            lkType = 1
+         elif type (aPkt) == scapy.layers.l2.CookedLinux:
+            lkType = 113
+         else:
+            print "Unknown link type: "
+            type (aPkt)
+            print "    -- exiting"
+            exit
+
+         pcapOut = PcapWriter (pcapOutName, linktype=lkType, append=True)
          oldPcapOutName = pcapOutName
 
 # write the packet
