@@ -6,6 +6,7 @@ bytes-in-flight.sh.html		An HTML description
 -------------------------------------------------------------------------------
 dns-time.sh			table of DNS server query response times and
 				list of unanswered queries
+dns-time.sh.html                An HTML description
 -------------------------------------------------------------------------------
 failed-connection-attempts.sh   find TCP connection attempts that have a failed
                                 There ae 6 failure scenarios, see the comments
