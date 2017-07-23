@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>failed-connection-attempts.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>failed-connection-attempts.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro searchs a packet trace looking for connection attempts that failed. 
+
+Output is a table of failed connection attempts. The first column is the TCP stream number and the second column is an indicator of why the stream made it into the table.
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspRST - server responds with a ReSeT without ACKing any data
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspCHA - first response from the server is a CHAllenge ACK
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspIMC - server just accepts and then IMmediately Closes the connection
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspSYN - the only response from the server is an ACK-SYN
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNOS - there are NO tcp Segments from the server
+<p>
+
+The presence or absense of an ACK-SYN is not enough to determine if a  connect attempt succeeded or not. It is possible that the ACK-SYN is not captured for some reason. Also if the listen backlog is filled it is possible that server will send a ACK-SYNs but then still not complete the 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just look for retransmitted SYNs. First a SYN may be retransmitted multiple times before being accepted. Second, if the server responds with an ICMP destination unreachable or a reset the SYN may not be retransmitted. Also if the server responds with a challenge ACK instead of a ACK-SYN the client can send its own reset.
+<p>
+
+A connection attempt is considered as succeded if the client sends a SYN and the server sends a segment with the PSH flag set since that means that the server has sent data. Also if the ACK number of the first ACK segment sent by the server with no other TCP flags set is &lt 65535. That is an arbitrary cut off but large enough that several segments could be dropped without changing the conclusion and small enough that the probability that it is a challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the server sends a FIN with an ACK number > 1 it means that it has ACKed something besides the SYN, note that this might be the FIN from the client but either way it is considered a succeeded connection. On the other hand if the server accepts the connection and then immediatelty sends a FIN the conection attempt is considered as failed. Technically this is not a failed TCP connection attempt but since the client application most likely reported an error it gets added to the list of failed connection attempts. 
+<p>
+
+You can monitor the progress of the script by looking at /tmp/failed-connection-attempts-4. As each stream number with a SYN is processed the number is written to the -4 file.
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsptail -f /tmp/failed-connection-attempts-4 2>/dev/null
+<br>
+is your friend. Note that if its a large file with just a few connection attempts -4 may not update very fast. 
+<p>
+
+<b><h3>Usage</h3></b>
+faled-connection-attempts.sh FILE-NAME [FILTER]
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be reabale by tshark.
+<br><br>
+<b>FILTER</b>
+<br
+Optional tshark filter. It will be ANDed to the "tcp && not icmp" If it contains spaces it must be enclosed in quotes.
+<br><br>
+
+<b><h3>Examples</h3></b>
+Example 1 shows trace test-1.pcap with 3 failed connections. Streams 0 and 2 have the server repeatedly sendinga SYN-ACK while stream 1 shows the server sending a challende ACK.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+ ./failed-connection-attempts.sh test-1.pcap
+failed-connection-attempts.sh test-1.pcap
+0  SYN
+1  CHA
+2  SYN
+
+$ tshark -r test-1.pcap -Y "tcp.stream == 0" -o tcp.ignore_tcp_timestamps:TRUE
+    1   0.000000 192.168.100.176 &rarr; 192.168.100.12 TCP 736 &rarr; 2049 [SYN] Seq=0 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    2   0.000201 192.168.100.12 &rarr; 192.168.100.176 TCP 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    3   0.999541 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Spurious Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    4   0.999790 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    5   1.435589 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    6   2.999368 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Spurious Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    7   2.999618 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    8   3.435466 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    9   6.999413 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Spurious Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   10   6.999664 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   11   7.635491 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+
+
+$ tshark -r test-1.pcap -Y "tcp.stream == 1" -o tcp.ignore_tcp_timestamps:TRUE
+   12   9.917463 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Port numbers reused] 736 &rarr; 2049 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   13   9.917713 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP ACKed unseen segment] 2049 &rarr; 736 [ACK] Seq=1 Ack=1396035405 Win=14480 Len=0
+   14  11.917341 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   15  11.917591 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Dup ACK 13#1] [TCP ACKed unseen segment] 2049 &rarr; 736 [ACK] Seq=1 Ack=1396035405 Win=14480 Len=0
+   16  15.835528 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP ACKed unseen segment] [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1396035405 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   17  15.917302 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   18  15.917496 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Dup ACK 13#2] [TCP ACKed unseen segment] 2049 &rarr; 736 [ACK] Seq=1 Ack=1396035405 Win=1853440 Len=0
+   19  23.917307 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   20  23.917509 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Dup ACK 13#3] [TCP ACKed unseen segment] 2049 &rarr; 736 [ACK] Seq=1 Ack=1396035405 Win=1853440 Len=0
+   21  32.235505 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP ACKed unseen segment] [TCP Retransmission] 2049 &rarr; 736 [SYN, ACK] Seq=0 Ack=1396035405 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   22  39.917583 192.168.100.176 &rarr; 192.168.100.12 TCP [TCP Retransmission] 736 &rarr; 2049 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   23  39.917784 192.168.100.12 &rarr; 192.168.100.176 TCP [TCP Dup ACK 13#4] [TCP ACKed unseen segment] 2049 &rarr; 736 [ACK] Seq=1 Ack=1396035405 Win=1853440 Len=0
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 has two failed connections. Stream 7 has no TCP response from the server. There is an ICMP "Destination unreachable" error.  In stream 19 you can see that the 3-way handshake completes and then the server sends a FIN, no data is sent in either direction.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh test-2.pcap 
+failed-connection-attempts.sh test-2.pcap
+7   NOS
+19  IMC
+
+$ tshark -r test-2.pcap -Y "tcp.stream == 7" -o tcp.ignore_tcp_timestamps:TRUE
+  130  37.428800 192.168.1.12 &rarr; 192.168.1.200 TCP 52360 &rarr; 21 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  131  37.430566 192.168.1.200 &rarr; 192.168.1.12 ICMP Destination unreachable (Host administratively prohibited)
+
+
+$ tshark -r test-2.pcap -Y "tcp.stream == 19" -o tcp.ignore_tcp_timestamps:TRUE
+ 1899 292.643604 192.168.1.12 &rarr; 192.168.1.200 TCP 37998 &rarr; 11577 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=128
+ 1900 292.647155 192.168.1.200 &rarr; 192.168.1.12 TCP 11577 &rarr; 37998 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 WS=128
+ 1901 292.647259 192.168.1.12 &rarr; 192.168.1.200 TCP 37998 &rarr; 11577 [ACK] Seq=1 Ack=1 Win=29312 Len=0
+ 1904 292.657241 192.168.1.200 &rarr; 192.168.1.12 TCP 11577 &rarr; 37998 [FIN, ACK] Seq=1 Ack=1 Win=14592 Len=0
+ 1905 292.657433 192.168.1.12 &rarr; 192.168.1.200 TCP 37998 &rarr; 11577 [ACK] Seq=1 Ack=2 Win=29312 Len=0
+ 1906 292.657488 192.168.1.12 &rarr; 192.168.1.200 TCP 37998 &rarr; 11577 [FIN, ACK] Seq=1 Ack=2 Win=29312 Len=0
+ 1908 292.659939 192.168.1.200 &rarr; 192.168.1.12 TCP 11577 &rarr; 37998 [ACK] Seq=2 Ack=2 Win=14592 Len=0
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 has 4 reset connections. In these connections the server does send a ACK-SYN but does not ACK any data sent by the client and eventaully sends a reset -- still withuot ACKing and data from the client.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh test-3.pcap 
+failed-connection-attempts.sh test-3.pcap
+0   RST
+5   RST
+12  RST
+14  RST
+
+$ tshark -r test-3.pcap -Y "tcp.stream == 5" -o tcp.ignore_tcp_timestamps:TRUE
+   86 169.498392 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=512
+   87 169.498415 172.16.188.112 &rarr; 172.16.32.29 TCP 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   88 169.510142 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [ACK] Seq=1 Ack=1 Win=29696 Len=0
+   89 169.526819 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+   90 169.744267 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+   91 169.994984 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+   92 170.497932 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  103 171.034791 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  104 171.046688 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#1] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
+  105 171.504121 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  112 173.236780 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  114 173.248431 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#2] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
+  116 173.515988 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  121 177.437780 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  122 177.449334 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#3] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
+  123 177.535986 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  128 185.439763 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  129 185.451347 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#4] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
+  130 185.583983 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  131 201.446772 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  132 201.458450 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#5] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
+  133 201.663994 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  163 233.856044 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
+  164 233.856065 172.16.188.112 &rarr; 172.16.32.29 TCP 14805 &rarr; 18446 [RST] Seq=1 Win=0 Len=0
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Example 4 has an other more tradition traditional NOS trace where the server sends no packets not TCP or ICMP.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh test-4.pcap
+failed-connection-attempts.sh test-4.pcap
+0   NOS
+27  RST
+28  NOS
+29  NOS
+30  NOS
+34  SYN
+35  NOS
+36  NOS
+
+$ tshark -r test-4-.pcap -Y "tcp.stream == 0" -o tcp.ignore_tcp_timestamps:TRUE 2>/dev/null
+    1   0.000000 10.100.128.185 &rarr; 10.100.100.226 TCP 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  238   0.999326 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  249   2.999347 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  272   6.999420 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+ 1677  14.999671 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+Example 5 has a more traditioanl reset trace where the server responds with a reset immediately
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh test-5.pcapng
+failed-connection-attempts.sh test-5.pcapng
+8   RST
+9   RST
+12  RST
+18  NOS
+19  NOS
+21  NOS
+22  NOS
+$ tshark -r test-5.pcapng -Y "tcp.stream == 8" -o tcp.ignore_tcp_timestamps:TRUE
+  166 25.044498125  192.168.1.3 &rarr; 192.168.1.200 TCP 58438 &rarr; 12481 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  167 25.045029361 192.168.1.200 &rarr; 192.168.1.3  TCP 12481 &rarr; 58438 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+</pre>
+</td></tr>
+</table>
+Figure 5
+</center>
+<p>
+
+Example 6 shows a trace where there were no failed connections found.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh /cloud/seagate/packet-trace-library/failed-connections.none.pcap 
+failed-connection-attempts.sh /cloud/seagate/packet-trace-library/failed-connections.none.pcap
+No failed connection attempts found
+</pre>
+</td></tr>
+</table>
+Figure 6
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-13</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
