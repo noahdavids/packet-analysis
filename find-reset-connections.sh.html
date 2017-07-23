@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>find-reset-connections.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>find-reset-connections.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to find TCP connections that have been reset without being closed. That is one host has sent a RESET without either host sending a FIN. Typically this means that some error condition happened and that is a stream that needs investigation. Unfortunately many applications send a FIN and then immediately shutdown the socket so that any response from the remote host (like a FIN-ACK) triggers a reset. This is probably not an issue and we do not want to waste time investigating these connections. This script will filter those connections out. Note that this is an assumption; the host receiving the reset may report an error and this is the error we have been called to investigate. So keep that in mind.
+<p>
+The Output has the format
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&ltStream Number> &ltSrc IP&gt &ltSrc Port&gt &ltTCP Seq&gt &ltDest IP&gt &ltDst Port&gt
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&ltStream Number> &ltSrc IP&gt &ltSrc Port&gt &ltTCP Seq&gt &ltDest IP&gt &ltDst Port&gt
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&ltStream Number> &ltSrc IP&gt &ltSrc Port&gt &ltTCP Seq&gt &ltDest IP&gt &ltDst Port&gt
+<p>
+Note if there is no output it means that every stream that had a reset also had a FIN 
+<p>
+A TCP Seq number of 1 means that the sender did not send any actual data -- or at least tshark did not see any data (it may just be that it wasn't captured).
+<p>
+If there are multiple resets with the same source IP and sequence number it probably means that something is happening at that point in the connection that is causing some kind of error.
+
+
+<b><h3>Usage</h3></b>
+find-reset-connections.sh FILE-NAME
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be reabale by tshark.
+<br><br>
+
+<b><h3>Example</h3></b>
+Example 1 shows multiple reset connections and the tail end of two of those connections.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+
+$ ./find-reset-connections.sh /cloud/seagate/packet-trace-library/resets-multiple.pcap
+find-reset-connections.sh /cloud/seagate/packet-trace-library/resets-multiple.pcap
+103   192.168.156.66   41517  3407  10.231.156.88  443
+1035  192.168.158.132  33546  3308  10.231.156.88  443
+1058  192.168.137.45   40390  3308  10.231.156.88  443
+1067  192.168.157.164  41083  3407  10.231.156.88  443
+1104  172.16.159.225   37376  255   10.231.156.88  443
+1110  172.16.134.74    60604  255   10.231.156.88  443
+1112  192.168.130.32   31826  3308  10.231.156.88  443
+12    172.16.159.1     41374  255   10.231.156.88  443
+1233  10.222.171.25    43777  257   10.231.156.88  443
+1248  192.168.25.73    46808  3310  10.231.156.88  443
+125   192.168.137.27   45553  3407  10.231.156.88  443
+1282  192.168.80.34    57269  3407  10.231.156.88  443
+1341  10.123.164.109   40000  255   10.231.156.88  443
+146   192.168.162.108  56038  3308  10.231.156.88  443
+256   192.168.24.195   50552  3308  10.231.156.88  443
+322   192.168.158.198  33379  3308  10.231.156.88  443
+363   192.168.137.61   44359  3308  10.231.156.88  443
+367   192.168.219.119  58593  3310  10.231.156.88  443
+377   10.231.180.29    38145  3310  10.231.156.88  443
+379   192.168.24.35    57920  3407  10.231.156.88  443
+450   10.123.22.36     43151  3308  10.231.156.88  443
+488   192.168.130.13   35109  3310  10.231.156.88  443
+532   192.168.204.72   35145  3310  10.231.156.88  443
+555   192.168.157.92   52317  3407  10.231.156.88  443
+571   10.231.134.183   44916  1     10.231.156.88  443
+600   192.168.112.80   49540  3310  10.231.156.88  443
+622   192.168.159.161  34001  3308  10.231.156.88  443
+649   192.168.158.122  60021  3310  10.231.156.88  443
+658   192.168.22.129   48669  3308  10.231.156.88  443
+723   172.16.134.59    42333  3310  10.231.156.88  443
+841   192.168.130.246  40879  3308  10.231.156.88  443
+844   10.231.159.139   47427  3310  10.231.156.88  443
+851   192.168.137.27   45554  3407  10.231.156.88  443
+905   192.168.228.17   42756  3308  10.231.156.88  443
+909   10.123.164.110   40238  255   10.231.156.88  443
+986   172.16.159.171   52640  257   10.231.156.88  443
+988   192.168.92.12    53006  3310  10.231.156.88  443
+
+$ tshark -r /cloud/seagate/packet-trace-library/resets-multiple.pcap -Y "tcp.stream == 571" | tail -10
+12929  29.898152 10.231.134.183 → 10.231.156.88 TCP [TCP Dup ACK 7367#2] 44916 → 443 [ACK] Seq=248 Ack=1 Win=14720 Len=0 TSval=2766005378 TSecr=1577242910
+12932  29.906456 10.231.134.183 → 10.231.156.88 TCP [TCP Retransmission] 44916 → 443 [PSH, ACK] Seq=1 Ack=1 Win=14720 Len=247 TSval=2766005387 TSecr=1577242910
+16435  33.122477 10.231.134.183 → 10.231.156.88 TCP [TCP Retransmission] 44916 → 443 [PSH, ACK] Seq=1 Ack=1 Win=14720 Len=247 TSval=2766008603 TSecr=1577242910
+17278  33.907728 10.231.156.88 → 10.231.134.183 TCP [TCP Spurious Retransmission] 443 → 44916 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 TSval=1577249929 TSecr=2766008603 WS=128
+17281  33.908029 10.231.134.183 → 10.231.156.88 TCP [TCP Dup ACK 7367#3] 44916 → 443 [ACK] Seq=248 Ack=1 Win=14720 Len=0 TSval=2766009388 TSecr=1577242910
+22783  39.554440 10.231.134.183 → 10.231.156.88 TCP [TCP Retransmission] 44916 → 443 [PSH, ACK] Seq=1 Ack=1 Win=14720 Len=247 TSval=2766015035 TSecr=1577242910
+25227  41.907723 10.231.156.88 → 10.231.134.183 TCP [TCP Spurious Retransmission] 443 → 44916 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 TSval=1577257929 TSecr=2766015035 WS=128
+25229  41.908141 10.231.134.183 → 10.231.156.88 TCP [TCP Dup ACK 7367#4] 44916 → 443 [ACK] Seq=248 Ack=1 Win=14720 Len=0 TSval=2766017388 TSecr=1577242910
+40135  57.907679 10.231.156.88 → 10.231.134.183 TCP [TCP Spurious Retransmission] 443 → 44916 [SYN, ACK] Seq=0 Ack=1 Win=14480 Len=0 MSS=1460 SACK_PERM=1 TSval=1577273929 TSecr=2766015035 WS=128
+40136  57.908091 10.231.134.183 → 10.231.156.88 TCP 44916 → 443 [RST] Seq=1 Win=0 Len=0
+
+
+$ tshark -r /cloud/seagate/packet-trace-library/resets-multiple.pcap -Y "tcp.stream == 1035" | tail -10
+23412  40.079763 10.231.156.88 → 192.168.158.132 TLSv1.2 Ignored Unknown Record
+23413  40.079944 10.231.156.88 → 192.168.158.132 TLSv1.2 Encrypted Alert
+23414  40.080301 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [ACK] Seq=3277 Ack=4888 Win=23296 Len=0 TSval=372325115 TSecr=1577256100
+23415  40.080331 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [ACK] Seq=3277 Ack=7784 Win=29184 Len=0 TSval=372325115 TSecr=1577256101
+23416  40.080342 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [ACK] Seq=3277 Ack=9821 Win=34944 Len=0 TSval=372325115 TSecr=1577256101
+23417  40.080928 192.168.158.132 → 10.231.156.88 TLSv1.2 Encrypted Alert
+23418  40.080951 10.231.156.88 → 192.168.158.132 TCP 443 → 33546 [ACK] Seq=9852 Ack=3308 Win=22784 Len=0 TSval=1577256102 TSecr=372325115
+23419  40.081030 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [RST, ACK] Seq=3308 Ack=9852 Win=34944 Len=0 TSval=372325115 TSecr=1577256101
+23425  40.081278 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [RST] Seq=3308 Win=0 Len=0
+23515  40.180031 10.231.156.88 → 192.168.158.132 TCP 443 → 33546 [RST, ACK] Seq=9852 Ack=3308 Win=22784 Len=0 TSval=1577256201 TSecr=372325115
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-22</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
