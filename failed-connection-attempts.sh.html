@@ -15,7 +15,7 @@
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 </center>
 <p>
-This macro searchs a packet trace looking for connection attempts that failed. 
+This macro searches a packet trace looking for connection attempts that failed. 
 
 Output is a table of failed connection attempts. The first column is the TCP stream number and the second column is an indicator of why the stream made it into the table.
 <br>
@@ -30,10 +30,10 @@ Output is a table of failed connection attempts. The first column is the TCP str
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNOS - there are NO tcp Segments from the server
 <p>
 
-The presence or absense of an ACK-SYN is not enough to determine if a  connect attempt succeeded or not. It is possible that the ACK-SYN is not captured for some reason. Also if the listen backlog is filled it is possible that server will send a ACK-SYNs but then still not complete the 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just look for retransmitted SYNs. First a SYN may be retransmitted multiple times before being accepted. Second, if the server responds with an ICMP destination unreachable or a reset the SYN may not be retransmitted. Also if the server responds with a challenge ACK instead of a ACK-SYN the client can send its own reset.
+The presence or absence of an ACK-SYN is not enough to determine if a  connect attempt succeeded or not. It is possible that the ACK-SYN is not captured for some reason. Also if the listen backlog is filled it is possible that server will send a ACK-SYNs but then still not complete the 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just look for retransmitted SYNs. First a SYN may be retransmitted multiple times before being accepted. Second, if the server responds with an ICMP destination unreachable or a reset the SYN may not be retransmitted. Also if the server responds with a challenge ACK instead of a ACK-SYN the client can send its own reset.
 <p>
 
-A connection attempt is considered as succeded if the client sends a SYN and the server sends a segment with the PSH flag set since that means that the server has sent data. Also if the ACK number of the first ACK segment sent by the server with no other TCP flags set is &lt 65535. That is an arbitrary cut off but large enough that several segments could be dropped without changing the conclusion and small enough that the probability that it is a challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the server sends a FIN with an ACK number > 1 it means that it has ACKed something besides the SYN, note that this might be the FIN from the client but either way it is considered a succeeded connection. On the other hand if the server accepts the connection and then immediatelty sends a FIN the conection attempt is considered as failed. Technically this is not a failed TCP connection attempt but since the client application most likely reported an error it gets added to the list of failed connection attempts. 
+A connection attempt is considered as succeeded if the client sends a SYN and the server sends a segment with the PSH flag set since that means that the server has sent data. Also if the ACK number of the first ACK segment sent by the server with no other TCP flags set is &lt 65535. That is an arbitrary cut off but large enough that several segments could be dropped without changing the conclusion and small enough that the probability that it is a challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the server sends a FIN with an ACK number > 1 it means that it has ACKed something besides the SYN, note that this might be the FIN from the client but either way it is considered a succeeded connection. On the other hand if the server accepts the connection and then immediately sends a FIN the connection attempt is considered as failed. Technically this is not a failed TCP connection attempt but since the client application most likely reported an error it gets added to the list of failed connection attempts. 
 <p>
 
 You can monitor the progress of the script by looking at /tmp/failed-connection-attempts-4. As each stream number with a SYN is processed the number is written to the -4 file.
@@ -48,7 +48,7 @@ faled-connection-attempts.sh FILE-NAME [FILTER]
 <br><br>
 <b>FILE-NAME</b>
 <br>
-The file name (or path to the file), This file must be reabale by tshark.
+The file name (or path to the file), This file must be readable by tshark.
 <br><br>
 <b>FILTER</b>
 <br
@@ -56,7 +56,7 @@ Optional tshark filter. It will be ANDed to the "tcp && not icmp" If it contains
 <br><br>
 
 <b><h3>Examples</h3></b>
-Example 1 shows trace test-1.pcap with 3 failed connections. Streams 0 and 2 have the server repeatedly sendinga SYN-ACK while stream 1 shows the server sending a challende ACK.
+Example 1 shows trace test-1.pcap with 3 failed connections. Streams 0 and 2 have the server repeatedly sending a SYN-ACK while stream 1 shows the server sending a challenge ACK.
 <center>
 <table border=5>
 <tr><td align=left>
@@ -131,7 +131,7 @@ Figure 2
 </center>
 <p>
 
-Example 3 has 4 reset connections. In these connections the server does send a ACK-SYN but does not ACK any data sent by the client and eventaully sends a reset -- still withuot ACKing and data from the client.
+Example 3 has 4 reset connections. In these connections the server does send a ACK-SYN but does not ACK any data sent by the client and eventually sends a reset -- still without ACKing and data from the client.
 <center>
 <table border=5>
 <tr><td align=left>
@@ -204,7 +204,7 @@ Figure 4
 </center>
 <p>
 
-Example 5 has a more traditioanl reset trace where the server responds with a reset immediately
+Example 5 has a more traditional reset trace where the server responds with a reset immediately
 <center>
 <table border=5>
 <tr><td align=left>
@@ -233,8 +233,8 @@ Example 6 shows a trace where there were no failed connections found.
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
-$ ./failed-connection-attempts.sh /cloud/seagate/packet-trace-library/failed-connections.none.pcap 
-failed-connection-attempts.sh /cloud/seagate/packet-trace-library/failed-connections.none.pcap
+$ ./failed-connection-attempts.sh test6.pcap
+failed-connection-attempts.sh test6.pcap
 No failed connection attempts found
 </pre>
 </td></tr>

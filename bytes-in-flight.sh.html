@@ -15,7 +15,7 @@
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 </center>
 <p>
-This macro finds the bytes in flight after each segment. Basically how many bytes are unACKed. This is slightly different from what Wireshark does. Wireshark shows the bytes in flight from when a packet is sent. For example if there are no outstanding bytes and the sender sends 32,000 bytes (we can assume TCP offloading) Wireshark will show 32,000 bytes in flight. If a series of ACKs acks all bytes and then the sender sends another 32,000 bytes Wireshark will again show 32,000 bytes in flight. At no point will it show 0 bytes in flight. I think this is misleading since you cannot see that the receiver is sending multiple ACKs and the bytes in flight is going down to zero and then the sender sends more data. It also calculates the available window by subtracting the bytes in flight from the last window receivied.
+This macro finds the bytes in flight after each segment. Basically how many bytes are unACKed. This is slightly different from what Wireshark does. Wireshark shows the bytes in flight from when a packet is sent. For example if there are no outstanding bytes and the sender sends 32,000 bytes (we can assume TCP offloading) Wireshark will show 32,000 bytes in flight. If a series of ACKs acks all bytes and then the sender sends another 32,000 bytes Wireshark will again show 32,000 bytes in flight. At no point will it show 0 bytes in flight. I think this is misleading since you cannot see that the receiver is sending multiple ACKs and the bytes in flight is going down to zero and then the sender sends more data. It also calculates the available window by subtracting the bytes in flight from the last window received.
 <p>
 The data probably makes more sense when the trace is captured on the sender.
 <p>
@@ -28,7 +28,7 @@ bytes-in-flight.sh bytes-in-flight.sh FILE SND-IP SND-PORT DST-IP DST-PORT OUTPU
 <br><br>
 <b>FILE-NAME</b>
 <br>
-The file name (or path to the file), This file must be reabale by tshark.
+The file name (or path to the file), This file must be readable by tshark.
 <br><br>
 <b>SND-IP</b>
 <br>

@@ -11,9 +11,11 @@ dns-time.sh.html                An HTML description
 failed-connection-attempts.sh   find TCP connection attempts that have a failed
                                 There ae 6 failure scenarios, see the comments
                                 for a description.
+failed-connection-attempts.sh.html Am HTML description
 -------------------------------------------------------------------------------
 find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
+find-reset-connections.sh.html	An HTML description
 -------------------------------------------------------------------------------
 local-drops			For each retransmitted TCP segment determine
                                 if the segment is seen more than once

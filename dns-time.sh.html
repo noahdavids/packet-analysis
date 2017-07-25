@@ -15,7 +15,7 @@
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 </center>
 <p>
-This macro uses tshark to find DNS (port 53) queries and calculate the time between query and response. It differs from the dns.time value caculated by wireshark in that it calculates the time between the first response for transaction ID X and the first query for transaction X not the first response and last query for transaction X.
+This macro uses tshark to find DNS (port 53) queries and calculate the time between query and response. It differs from the dns.time value calculated by wireshark in that it calculates the time between the first response for transaction ID X and the first query for transaction X not the first response and last query for transaction X.
 <p>
 The output is a a table with the following columns.
 <br>
@@ -38,11 +38,11 @@ Where:
 <li>Name
 <br>&nbsp&nbsp&nbsp&nbsp&nbspName being queries</li>
 <li>Response-time
-<br>&nbsp&nbsp&nbsp&nbsp&nbspPacket arrivial time of the first response</li>
+<br>&nbsp&nbsp&nbsp&nbsp&nbspPacket arrival time of the first response</li>
 <li>Query-time
 <br>&nbsp&nbsp&nbsp&nbsp&nbspPacket arrival time of the first query (when the query was sent)</li>
 <li>Delta-time
-<br>&nbsp&nbsp&nbsp&nbsp&nbspThe time between Respons-time and Query-time</li>
+<br>&nbsp&nbsp&nbsp&nbsp&nbspThe time between Response-time  and Query-time</li>
 </ul>
 <p>
 It also lists unanswered queries in the table
@@ -55,7 +55,7 @@ dns-time.sh FILE-NAME
 <br><br>
 <b>FILE-NAME</b>
 <br>
-The file name (or path to the file), This file must be reabale by tshark.
+The file name (or path to the file), This file must be readable by tshark.
 <br><br>
 
 <b><h3>Examples</h3></b>

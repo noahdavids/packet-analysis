@@ -37,7 +37,7 @@ find-reset-connections.sh FILE-NAME
 <br><br>
 <b>FILE-NAME</b>
 <br>
-The file name (or path to the file), This file must be reabale by tshark.
+The file name (or path to the file), This file must be readable by tshark.
 <br><br>
 
 <b><h3>Example</h3></b>
@@ -47,8 +47,8 @@ Example 1 shows multiple reset connections and the tail end of two of those conn
 <tr><td align=left>
 <pre>                                                                   
 
-$ ./find-reset-connections.sh /cloud/seagate/packet-trace-library/resets-multiple.pcap
-find-reset-connections.sh /cloud/seagate/packet-trace-library/resets-multiple.pcap
+$ ./find-reset-connections.sh test-1.pcap
+find-reset-connections.sh test-1.pcap
 103   192.168.156.66   41517  3407  10.231.156.88  443
 1035  192.168.158.132  33546  3308  10.231.156.88  443
 1058  192.168.137.45   40390  3308  10.231.156.88  443
@@ -87,7 +87,7 @@ find-reset-connections.sh /cloud/seagate/packet-trace-library/resets-multiple.pc
 986   172.16.159.171   52640  257   10.231.156.88  443
 988   192.168.92.12    53006  3310  10.231.156.88  443
 
-$ tshark -r /cloud/seagate/packet-trace-library/resets-multiple.pcap -Y "tcp.stream == 571" | tail -10
+$ tshark -r test-1.pcap -Y "tcp.stream == 571" | tail -10
 12929  29.898152 10.231.134.183 → 10.231.156.88 TCP [TCP Dup ACK 7367#2] 44916 → 443 [ACK] Seq=248 Ack=1 Win=14720 Len=0 TSval=2766005378 TSecr=1577242910
 12932  29.906456 10.231.134.183 → 10.231.156.88 TCP [TCP Retransmission] 44916 → 443 [PSH, ACK] Seq=1 Ack=1 Win=14720 Len=247 TSval=2766005387 TSecr=1577242910
 16435  33.122477 10.231.134.183 → 10.231.156.88 TCP [TCP Retransmission] 44916 → 443 [PSH, ACK] Seq=1 Ack=1 Win=14720 Len=247 TSval=2766008603 TSecr=1577242910
@@ -100,7 +100,7 @@ $ tshark -r /cloud/seagate/packet-trace-library/resets-multiple.pcap -Y "tcp.str
 40136  57.908091 10.231.134.183 → 10.231.156.88 TCP 44916 → 443 [RST] Seq=1 Win=0 Len=0
 
 
-$ tshark -r /cloud/seagate/packet-trace-library/resets-multiple.pcap -Y "tcp.stream == 1035" | tail -10
+$ tshark -r test-1.pcap -Y "tcp.stream == 1035" | tail -10
 23412  40.079763 10.231.156.88 → 192.168.158.132 TLSv1.2 Ignored Unknown Record
 23413  40.079944 10.231.156.88 → 192.168.158.132 TLSv1.2 Encrypted Alert
 23414  40.080301 192.168.158.132 → 10.231.156.88 TCP 33546 → 443 [ACK] Seq=3277 Ack=4888 Win=23296 Len=0 TSval=372325115 TSecr=1577256100

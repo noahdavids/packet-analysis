@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>local-drops.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>local-drops.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to make 2N+1 passes (a large file with lots of retransmissions will be slow) through a file. The first pass identifies all retransmitted TCP segments and extracts the starting sequence number from those segments. Then for each identified segment it finds all segments which include the starting sequence number. It then finds the first ACK for that sequence number.
+<p>
+If this macro is run over a trace that was captured on the receiving host we can see if the original segment was seen and if so if an ACK was sent. If this macro is run over a trace that was captured in the sending host we can see if an ACK was received before the retransmitted segment was sent.
+<p>
+The Output file has the format
+<br>
+TCP Seq NNNNNNN Pattern: PPPPPP
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+<p>
+Multiple frames from the sending IP indicate that the frame was received (or sent) multiple times. The placement of the ACK from the receiving IP indicates when the ACK was sent.
+<p>
+The pattern string PPPPPP represents the pattern of segments.
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspD-A-   would indicate the first segment is data followed by an ACK
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspD-D-A- would be data, data again and then an ACK
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbspD-A-D- would be data and ack and then data again. We do not see the second ACK because only the first ACK is recorded.
+<p>
+Counting the unique patterns will give you an idea of the segment loss pattern
+<p>
+If the input file is large with many TCP streams it would make sense to first create a file containing just the segments of the TCP stream of interest.
+<p>
+If there are enough segments that the sequence numbers wrap and are reused this will probably result in false positives (or negatives, it depends on your point of view). If this is the case the trace file should be broken up so that the sequence number space is not reused. Note that a sequence number wrap is OK, it is when it wraps and proceeds past where it originally started that things get messy.
+<p>
+
+<b><h3>Usage</h3></b>
+local-drops.sh FILE-NAME SRC-ADDR TCP-PORT OUTPUT-FILE
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+<b>SRC-ADDR</b>
+<br>
+The source IP address of the sender.
+<br><br>
+<b>TCP-PORT</b>
+<br>
+Is the client side TCP port. It may be long to the sender or the receiver. It is just to make sure that only 1 TCP stream is evaluated.
+<br><br>
+<b>OUTPUT-FILE</b>
+<br>
+The file name (or path) to an output file.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1a - trace collected on the receiver. Note that it took approximately 30 minutes to run through the trace with 14,898 packets and 611 retransmissions in the selected stream.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ time ./local-drops.sh retransmissions-remote-sender.pcap  10.13.32.196 65376 local-drops.out            
+local-drops.sh retransmissions-remote-sender.pcap 10.13.32.196 65376 local-drops.out
+
+real	30m52.758s
+user	26m33.832s
+sys	3m23.152s
+</pre>
+</td></tr>
+</table>
+Figure 1a - Execution with the time command so we know how long it took
+</center>
+<p>
+
+Example 1b - First part of the output file from the above execution. Note it reports the number of retransmissions, 611, and for each sequence number you can see the data packet and the first and the ACK.
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre> 
+$ cat local-drops.out
+local-drops.sh retransmissions-remote-sender.pcap 10.13.32.196 65376 local-drops.out                      
+local-drops.sh run on Sun Jul 23 11:53:34 MST 2017
+local-drops.sh version 1.5_2017-07-23
+
+Number of retransmission 611
+
+TCP Seq: 1401752293 Pattern: D-A-
+8	0.683443000	10.13.32.196	62	10.13.12.129	1401752293	127807339	1401752793
+9	0.683452000	10.13.12.129	64	10.13.32.196	127807339	1401754293	
+
+TCP Seq: 1401760793 Pattern: D-A-
+34	3.280608000	10.13.32.196	62	10.13.12.129	1401760793	127807691	1401761293
+35	3.280628000	10.13.12.129	64	10.13.32.196	127807691	1401762293	
+
+TCP Seq: 1401764793 Pattern: D-A-
+51	4.896903000	10.13.32.196	62	10.13.12.129	1401764793	127807851	1401765293
+52	4.896923000	10.13.12.129	64	10.13.32.196	127807851	1401766293	
+
+TCP Seq: 1401767293 Pattern: D-A-
+61	6.129472000	10.13.32.196	62	10.13.12.129	1401767293	127807979	1401767793
+. . . . .
+</pre>
+</td></tr>
+</table>
+Figure 1b - the output file
+</center>
+<p>
+
+Example 1c - summary of the data-ACK pattern. In 491 cases there is a data segment followed by the ACK so the probability is that the original data segment was lost. In 94 cases there is an ACK after the data segment and that is followed by another data segment. Chances are that the original ACK was lost. The subsequent ACK is not listed because the script only lists the first ACK. There are also 26 cases of two data segments and then an ACK. It is possible that the original data segment was dropped at the socket level.
+<p>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre> 
+$ cat local-drops.out | grep TCP | awk '{print $5}' | sort | uniq -c                                      
+    491 D-A-
+     94 D-A-D-
+     26 D-D-A-
+</pre>
+</td></tr>
+</table>
+Figure 1c - summary of the data-ACK pattern.
+</center>
+<p>
+
+Example 1d - Given the length of time the script takes to run it is nice to be able to monitor its progress. The script writes out the number of retransmissions after the first pass. You can grep for that number early on and then count the number of "TCP" lines to get some idea of the progress. 
+<p>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre> 
+$ cat local-drops.out | grep Number                                                                       
+Number of retransmission 611
+$ cat local-drops.out | grep TCP | wc -l
+11
+$ cat local-drops.out | grep TCP | wc -l
+130
+$ cat local-drops.out | grep TCP | wc -l
+215
+$ cat local-drops.out | grep TCP | wc -l
+406
+</pre>
+</td></tr>
+</table>
+Figure 1d - Monitoring the progress of the script
+</center>
+<p>
+Example 2 - trace collected on the sender. Note that the sender IP address 172.29.26.124 is shown with an IP TTL of 64 in the trace output indicating that the packets have not gone through a router. Also note the data-ACK pattern. In all cases there are multiple data packets before the ACK.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./local-drops.sh retransmissions.pcap  172.29.26.124 42111 local-drops.out
+local-drops.sh retransmissions.pcap 172.29.26.124 42111 local-drops.out
+
+$ cat local-drops.out
+local-drops.sh retransmissions.pcap 172.29.26.124 42111 local-drops.out                                   
+local-drops.sh run on Sun Jul 23 10:32:24 MST 2017
+local-drops.sh version 1.5_2017-07-23
+
+Number of retransmission 244
+
+TCP Seq: 456834933 Pattern: D-D-A-
+1326	1.464269000	172.29.26.124	64	172.21.198.87	456834933	2287642059	456836381
+1462	1.537262000	172.29.26.124	64	172.21.198.87	456834933	2287642059	456836381
+1612	1.610243000	172.21.198.87	57	172.29.26.124	2287642059	457081093	
+
+TCP Seq: 457653053 Pattern: D-D-A-
+1764	1.684147000	172.29.26.124	64	172.21.198.87	457651605	2287642059	457654501
+1852	1.757244000	172.29.26.124	64	172.21.198.87	457653053	2287642059	457654501
+1912	1.830185000	172.21.198.87	57	172.29.26.124	2287642059	457819573	
+
+TCP Seq: 460237733 Pattern: D-D-A-
+3081	3.509171000	172.29.26.124	64	172.21.198.87	460236285	2287642059	460239181
+3119	3.653026000	172.29.26.124	64	172.21.198.87	460237733	2287642059	460239181
+3152	3.726052000	172.21.198.87	57	172.29.26.124	2287642059	460314477	
+
+TCP Seq: 461598853 Pattern: D-D-A-
+. . . . .
+
+$ cat local-drops.out | grep TCP | awk '{print $5}' | sort | uniq -c
+    218 D-D-A-
+     23 D-D-D-A-
+      3 D-D-D-D-A-
+
+</pre>
+</td></tr>
+</table>
+Figure 2 - trace collected on the sender
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-23</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
