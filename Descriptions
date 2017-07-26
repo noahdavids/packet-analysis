@@ -11,7 +11,7 @@ dns-time.sh.html                An HTML description
 failed-connection-attempts.sh   find TCP connection attempts that have a failed
                                 There ae 6 failure scenarios, see the comments
                                 for a description.
-failed-connection-attempts.sh.html Am HTML description
+failed-connection-attempts.sh.html An HTML description
 -------------------------------------------------------------------------------
 find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
@@ -48,4 +48,5 @@ stream-throughput.sh		calculate the throughput of all TCP streams
 -------------------------------------------------------------------------------
 unterminated-connections.sh	find TCP connections that have not been
                                 closed or reset
+unterminated-connections.sh.html An HTML description
 

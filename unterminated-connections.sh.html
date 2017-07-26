@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>unterminated-connections.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>unterminated-connections.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to find TCP connections aka streams in a packet trace that have not been terminated by the end of the packet trace. The output is a list of stream indexes and a count of the total number of streams.
+<p>
+
+<b><h3>Usage</h3></b>
+local-drops.sh FILE-NAME [TSHARK-FILTER]
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+<b>TSHARK-FILTER</b>
+<br>
+An optional filter that can be used to limit the connections to be considered.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1 - is a simple execution with just the file name
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./unterminated-connections.sh test.pcap                                                             
+unterminated-connections.sh test.pcap
+0
+1
+3
+4
+5
+7
+8
+11
+Total number of unterminated connectionsis 8
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - Filtering the trace for connections that are for hosts outside the 192.168.1.0/24 subnet
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./unterminated-connections.sh test.pcap "not (ip.src == 192.168.1.0/24 && ip.dst == 192.168.1.0/24)"
+unterminated-connections.sh test.pcap not (ip.src == 192.168.1.0/24 && ip.dst == 192.168.1.0/24)
+0
+1
+3
+8
+11
+Total number of unterminated connectionsis 5
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-25</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
