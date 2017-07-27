@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>stream_throughput.sh.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>stream_throughput.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to make N+1 passes through a file. The first pass identifies all TCP streams. Then for each stream it calculates the throughput from the last frame's ACK number and dividing by the TCP relative time. Reset frames are excluded since they do not always carry an ACK number.
+<p>
+The Output file has the format
+&nbsp&nbsp&nbsp&nbsp&nbspTCP Stream: N IPSRC:PORTSRC -> IPDST:PORTDST   ACK / TIME = THROUGHPUT Bytes/Sec
+<p>
+If the input file is large with many TCP streams it would make sense to first create a file containing just the segments of the TCP stream of interest, assuming you are not interested in all the streams.
+<p>
+If there are enough segments that the sequence numbers wrap and are reused this macro cannot be used.
+<p>
+This also does not consider any bytes ACKed via Selective Acknowledgment blocks. 
+#<p>
+
+<b><h3>Usage</h3></b>
+stream_throughput.sh FILE-NAME IP-SRC OUTFILE
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+<b>IP-SRC</b>
+<br>
+Is the IP address of the host sending the bytes you wish to calculate the throughput for.
+<br><br>
+<b>OUTFILE</b>
+<br>
+A file to put he results in.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1 - trace file with just 1 TCP stream with the source address
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+
+$ ./stream_throughput.sh test.pcap 10.123.5.61 throughput.out
+stream-throughput.sh test.pcap 10.123.5.61 throughput.out
+
+
+$ cat throughput.out 
+stream-throughput.sh test.pcap 10.123.5.61 throughput.out
+stream-throughput.sh run on Wed Jul 26 20:47:56 MST 2017
+stream-throughput.sh version 1.4_2017-07-26
+
+TCP  Stream  0  10.123.5.61:753  ->  10.123.4.165:2049  264990145  /  2.363086000  =  112137325.937354  Bytes/sec
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - trace file with multiple streams from the source address
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./stream_throughput.sh /tmp/test2.pcap 192.168.1.200 throughput.out
+stream-throughput.sh /tmp/test2.pcap 192.168.1.200 throughput.out
+
+$ cat throughput.out 
+stream-throughput.sh /tmp/test2.pcap 192.168.1.200 throughput.out
+stream-throughput.sh run on Wed Jul 26 20:58:12 MST 2017
+stream-throughput.sh version 1.4_2017-07-26
+
+TCP  Stream  17  192.168.1.200:22  ->  192.168.1.12:37262  9111      /  9.223089000   =  987.846913      Bytes/sec
+TCP  Stream  18  192.168.1.200:22  ->  192.168.1.12:37264  35921567  /  14.336424000  =  2505615.556571  Bytes/sec
+TCP  Stream  19  192.168.1.200:22  ->  192.168.1.12:37266  35921647  /  14.155734000  =  2537603.984364  Bytes/sec
+TCP  Stream  22  192.168.1.200:22  ->  192.168.1.12:37270  35921647  /  13.547399000  =  2651553.039812  Bytes/sec
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - Mistyping the source address so no streams are found
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./stream_throughput.sh /tmp/test2.pcap 192.168.2.200 throughput.out
+stream-throughput.sh /tmp/test2.pcap 192.168.2.200 throughput.out
+There are no acknowledgment packets going to the IP source address  192.168.2.200  - exiting                     
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-26</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

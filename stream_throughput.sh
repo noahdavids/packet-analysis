@@ -28,8 +28,12 @@
 #    to STREAMTHROUGHPUTVERSION
 # Version 1.3 Apr 1 2017
 #    Added copyright and GNU GPL statement and disclaimer
+# Version 1.4 Jul 26, 2017
+#    Removed the TSHARK-FILTER argument and now automagically figure out
+#    if "-Y" or "-R" is needed
+#    Added test to report if no packets from source where found.
 
-STREAMTHROUGHPUTVERSION="1.3_2017-04-01"
+STREAMTHROUGHPUTVERSION="1.4_2017-07-26"
 #
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -44,25 +48,22 @@ STREAMTHROUGHPUTVERSION="1.3_2017-04-01"
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-if [ $# -ne 4 ]
+if [ $# -ne 3 ]
 
    then echo "Usage:"
         echo "   stream-throughput.sh FILE IPSRC TSHARK-FILTER OUTFILE"
         echo "      FILE is the name of the trace file to be analyzed"
         echo "      IPSRC is the IP address of the host sending the bytes"
         echo "         you wish to calculate the throughput for."
-        echo "      TSHARK-FILTER is either Y or R depening on the release \
-of Tshark"
         echo "      OUTFILE is the name of the output file"
         echo "Example:"
-        echo "   stream-throughput.sh trace.pcap Y stream-throughput.out"
+        echo "   stream-throughput.sh trace.pcap stream-throughput.out"
         exit
 fi
 
 FILE=$1
 IPSRC=$2
-FILTER=$3
-OUTFILE=$4
+OUTFILE=$3
 
 if [ ! -e $FILE ]
    then echo "Could not find input file $FILE"
@@ -78,18 +79,22 @@ if [[ ! $IPSRC =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
    exit
 fi
 
-if [ $FILTER != "R" -a $FILTER != "Y" ]
-   then echo "Filter string must be either R or Y, $FILTER is not allowed"
-   exit
+# Figure out if we can use "-Y" as the display filter argument or we need 
+# "-R". Basically look at the help output and if we do not find the "-Y"
+# we use "-R"
+
+DASH="-Y"
+if [ $(tshark -help | egrep "\-Y <display filter>" | wc -l) -eq 0 ]
+then DASH="-R"
 fi
 
 # I always echo the command and arguments to STDOUT as a sanity check
 
-echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE
+echo stream-throughput.sh $FILE $IPSRC $OUTFILE
 
 # Also echo the command, arguments, date and version to the output file
 
-echo stream-throughput.sh $FILE $IPSRC $FILTER $OUTFILE > $OUTFILE
+echo stream-throughput.sh $FILE $IPSRC $OUTFILE > $OUTFILE
 echo stream-throughput.sh run on $(date) >> $OUTFILE
 echo stream-throughput.sh version $STREAMTHROUGHPUTVERSION >> $OUTFILE
 echo >> $OUTFILE
@@ -98,14 +103,21 @@ echo >> $OUTFILE
 # Tshark commands because we are interested in the ACK values going back to
 # the source.
 
-tshark -r $FILE -$FILTER "ip.dst == $IPSRC" -T fields -e tcp.stream | sort -nu > /tmp/tcp_streams
+tshark -r $FILE $DASH "ip.dst == $IPSRC" -T fields -e tcp.stream | sort -nu > /tmp/tcp_streams
+
+if [ $(cat /tmp/tcp_streams | wc -l) -eq 0 ]
+then echo "There are no acknowledgment packets going to the IP source address " $IPSRC " - exiting"
+     echo "There are no acknowledgment packets going to the IP source address " $IPSRC " - exiting" >> $OUTFILE
+     exit
+fi
+   
 
 cat /tmp/tcp_streams | while read x
 do
    echo -n "TCP Stream $x  " >> /tmp/tcp_streams_throughput
    tshark -r $FILE -o tcp.relative_sequence_numbers:TRUE \
                    -o tcp.calculate_timestamps:TRUE \
-       -$FILTER "tcp.stream == $x && not tcp.flags.reset == 1 && \
+       $DASH "tcp.stream == $x && not tcp.flags.reset == 1 && \
                 ip.dst == $IPSRC" \
        -T fields -e tcp.time_relative -e ip.src -e tcp.srcport -e ip.dst \
                  -e tcp.dstport -e tcp.ack | tail -1  > /tmp/tcp_a_stream
