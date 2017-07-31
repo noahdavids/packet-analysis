@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>start-packet-tracing.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>start-packet-tracing.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro starts tcpdump to record packets using a ring buffer of 10 files of 100 megabytes each. The process is placed in the background. So do not forget to kill the process when you are done.
+<p>
+
+<b><h3>Usage</h3></b>
+start-packet-tracing.sh DEVICE OUTPUT-FILE [[LENGTH [FILTER]]
+<br><br>
+<b>DEVICE</b>
+<br>
+Is the name of the device to trace on
+<br><br>
+<b>OUTPUT-FILE</b>
+<br>
+The base name of the file to write the packets to. 
+<br><br>
+<b>LENGTH</b>
+<br>
+The maximum number of bytes from each frame that will be captured and writen as part of the output file.
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp0 indicates that the entire frame should be captured
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp114 is the default and will capture the entire Ethernet/IP/TCP header assuming there are no IP options. If the header does not use all 40 bytes of options you will also capture some of the TCP data. UDP headers are smaller so some UDP data will also be captured"
+<br><br>
+<b>FILTER</b>
+<br>
+Is a tcpdump filter string to limit what is captured. The default is the null string which will capture everything. If you want to include a filter you must include the length argument. If FILTER is specified you must also specify the LENGTH.
+<br><br>
+
+
+<b><h3>Examples</h3></b>
+
+Example 1 - minimum arguments just the device and file name. Note the 10 files names wlp5s0.pcap0 through wlp5s0.pcap9. Based on the dates we know that wlp5s0.pcap2 is the earliest with wlp5s0.pcap1 the latest. So wlp5s0.pcap0 and wlp5s0.pcap1 have been overwritten by later data. Note also the file sizes are slightly larger than the 100 MB limit. As long as the file size is less than the 100 MB limit the current record is written to the file and that record can push the file size to greater than the 100 MB limit. Depending on the record it can be up to 64K greater.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ sudo ./start-packet-tracing.sh wlp5s0 /tmp/wlp5s0.pcap
+start-packet-trace.sh wlp5s0 /tmp/wlp5s0.pcap 114 ""
+use kill $(cat /tmp/start-packet-trace.pid) to terminate the packet trace.
+$ tcpdump: listening on wlp5s0, link-type EN10MB (Ethernet), capture size 114 bytes                
+
+$ ls -l /tmp/wlp5s0.pcap*
+-rw-r--r-- 1 root root 100000113 Jul 28 19:54 /tmp/wlp5s0.pcap0
+-rw-r--r-- 1 root root  34800108 Jul 29 11:16 /tmp/wlp5s0.pcap1
+-rw-r--r-- 1 root root 100000127 Jul 28 07:05 /tmp/wlp5s0.pcap2
+-rw-r--r-- 1 root root 100000054 Jul 28 07:11 /tmp/wlp5s0.pcap3
+-rw-r--r-- 1 root root 100000080 Jul 28 07:17 /tmp/wlp5s0.pcap4
+-rw-r--r-- 1 root root 100000038 Jul 28 07:22 /tmp/wlp5s0.pcap5
+-rw-r--r-- 1 root root 100000030 Jul 28 07:28 /tmp/wlp5s0.pcap6
+-rw-r--r-- 1 root root 100000083 Jul 28 08:56 /tmp/wlp5s0.pcap7
+-rw-r--r-- 1 root root 100000070 Jul 28 09:27 /tmp/wlp5s0.pcap8
+-rw-r--r-- 1 root root 100000053 Jul 28 09:49 /tmp/wlp5s0.pcap9
+
+$ sudo kill $(cat /tmp/start-packet-trace.pid)
+3365385 packets captured
+3377827 packets received by filter
+2542 packets dropped by kernel
+$
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - Adding in a filter to capture only traffic over port 22. Note that I added a 0 for the length argument. The ps command can be used to show the tcpdump arguments. The table shows that all packets in the trace had either a destination port of 22 or a source port of 22 even though there was also HTTP and HTTPS traffic using the interface.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ sudo ./start-packet-tracing.sh wlp5s0 /tmp/wlp5s0.pcap 0 "tcp port 22"
+start-packet-trace.sh wlp5s0 /tmp/wlp5s0.pcap 0 tcp port 22
+use kill $(cat /tmp/start-packet-trace.pid) to terminate the packet trace.
+$ tcpdump: listening on wlp5s0, link-type EN10MB (Ethernet), capture size 262144 bytes             
+
+$ ps -alfe | grep tcpdump | grep -v grep
+4 S root     20397  1852  1  80   0 -  4999 -      17:26 pts/5    00:00:00 tcpdump -i wlp5s0 -C 100
+ -W 10 -s 0 -w /tmp/wlp5s0.pcap tcp port 22
+
+
+$ sudo kill $(cat /tmp/start-packet-trace.pid)
+238531 packets captured
+238702 packets received by filter
+169 packets dropped by kernel
+
+
+$ (echo "File not-port-22 port-22"; for x in $(ls /tmp/w*pcap*); do echo $x $(tshark -r $x -Y "not 
+(tcp.dstport == 22 || tcp.srcport == 22)" | wc -l)  $(tshark -r $x -Y "(tcp.dstport == 22 || tcp.sr
+cport == 22)" | wc -l); done) | column -t
+File               not-port-22  port-22
+/tmp/wlp5s0.pcap0  0            73445
+/tmp/wlp5s0.pcap1  0            72191
+/tmp/wlp5s0.pcap2  0            72661
+/tmp/wlp5s0.pcap3  0            20232
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-07-30</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

@@ -42,6 +42,7 @@ split-pcap.py.html		An HTML description
 -------------------------------------------------------------------------------
 start-packet-tracing.sh         runs tcpdump in the background with 10 files
                                 of 100 Meg each. 
+start-packet-tracing.sh.html	An HTML description
 -------------------------------------------------------------------------------
 stream-throughput.sh		calculate the throughput of all TCP streams
                                 in a trace file
