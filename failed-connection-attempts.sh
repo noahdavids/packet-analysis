@@ -5,7 +5,8 @@
 # failed. 
 
 # Output is a table of failed connection attempts. The first column is the
-# TCP stream number and the second column is an indicator of why the stream
+# TCP stream number followed by the server-ip:server-port and
+# client-ip:client-port. The 4th coloumn is an indicator of why the stream
 # made it into the table.
 #	RST - first response from the server is a ReSeT
 #	CHA - first response from the server is a CHAllenge ACK
@@ -64,6 +65,8 @@
 # Version 2.0 April 16, 2017
 #  Completelty rewritten, removed the scenarios in favor of a simpler approach
 #  and removed the suspected list (again).
+# Version 2.1 August 22, 2017
+#  Added the server:port client:port columns to the output
 
 FAILEDCONNECTIONATTEMPTSVERSION="2.0_2017-04-16"
 
@@ -117,10 +120,10 @@ then DASH="-R"
 fi
 
 # Call tshark writing the TCP stream number, source and destination IP
-# addressesall the flags the ACK number and the TCP length. Enclose the
-# stream value in "_" characters so that so when we match on stream 10
-# we do not also select streams 110, 210, 310, etc. Write everything out to
-# the temporary file /tmp/fail-connection-attempts-1.
+# addresses and ports, all the flags the ACK number and the TCP length.
+# Enclose the stream value in "_" characters so that so when we match
+# on stream 10 we do not also select streams 110, 210, 310, etc. Write
+# everything out to the temporary file /tmp/fail-connection-attempts-1.
 #
 # The not icmp is to make sure we aren't confused by an ICMP response
 # from the server. 
@@ -128,18 +131,23 @@ fi
 if [ $# -eq 2 ]
    then
      tshark -r "$FILE" $DASH "tcp && not icmp && ($2)" -T fields \
-       -e tcp.stream -e ip.src -e ip.dst -e tcp.flags.ack -e tcp.flags.push \
-       -e tcp.flags.reset -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack \
-       -e tcp.len -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
+       -e tcp.stream -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport \
+       -e tcp.flags.ack -e tcp.flags.push -e tcp.flags.reset \
+       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len \
+       -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
        awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5 " " $6 " " $7 " " $8 \
-             " " $9 " " $10}' > /tmp/failed-connection-attempts-1
+             " " $9 " " $10 " " $11 " " $12}' \
+                        > /tmp/failed-connection-attempts-1
 else
      tshark -r "$FILE" $DASH "tcp && not icmp" -T fields \
-       -e tcp.stream -e ip.src -e ip.dst -e tcp.flags.ack -e tcp.flags.push \
-       -e tcp.flags.reset -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack \
-       -e tcp.len -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
+       -e tcp.stream -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport \
+       -e tcp.flags.ack -e tcp.flags.push -e tcp.flags.reset \
+       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len \
+       -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
        awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5 " " $6 " " $7 " " $8 \
-             " " $9 " " $10}' > /tmp/failed-connection-attempts-1
+             " " $9 " " $10 " " $11 " " $12}' \
+                        > /tmp/failed-connection-attempts-1
+
 fi
 
 
@@ -165,7 +173,8 @@ echo -n "" > /tmp/failed-connection-attempts-4
 # Find segments where the SYN flag is set and the ACK flag is not.
 
 cat /tmp/failed-connection-attempts-1 | \
-  while read stream client server ack push reset syn fin ackno tcplen
+  while read stream client server cport sport ack push reset \
+             syn fin ackno tcplen
   do
     if  [ "$ack" == 0 -a "$syn" == 1 ]
         then echo $stream >> /dev/null
@@ -186,11 +195,11 @@ cat /tmp/failed-connection-attempts-1 | \
 # find the first segment from the server to the client for this stream that
 # does not have the SYN flag set
 
-    grep -E "$stream $server $client . . . 0" -m 1 \
+    grep -E "$stream $server $client $sport $cport . . . 0" -m 1 \
        /tmp/failed-connection-attempts-1 > /tmp/failed-connection-attempts-2
 
 # PUSH flag is set, good connection
-    if [ $(awk '($5 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
+    if [ $(awk '($7 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
          wc -l) -gt 0 ]
        then continue
     fi
@@ -199,21 +208,21 @@ cat /tmp/failed-connection-attempts-1 | \
 # number > 65535, it is probably (99.9984741% (1-65535÷4294967295)) a
 # challenge ACK so mark it as failed
   
-    if [ $(awk '($4 == 1 && $6 == 0 && $7 == 0 && $8 == 0 && \
-                                              $9 > 65535) {print $0}' \
+    if [ $(awk '($6 == 1 && $8 == 0 && $9 == 0 && $10 == 0 && \
+                                              $11 > 65535) {print $0}' \
                      /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then echo $stream "CHA" | tr "_" " " \
+       then echo $stream $server:$sport $client:$cport "CHA" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
             continue
     fi
 
 # ACK flag is set and the RST, SYN and FIN flags are not set and the ACK 
-# number < 65535,, it is probably not a challenge ACK so assume its good and
+# number < 65535, it is probably not a challenge ACK so assume its good and
 # skip the to the next stream. Note that is NOT the else from the previous
 # "if" since it still requires that the ACK flag be set.
 
-    if [ $(awk '($4 == 1 && $6 == 0 && $7 == 0 && $8 == 0 && \
-                                              $9 < 65535) {print $0}' \
+    if [ $(awk '($6 == 1 && $8 == 0 && $9 == 0 && $10 == 0 && \
+                                              $11 < 65535) {print $0}' \
                      /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
        then continue
     fi
@@ -223,9 +232,9 @@ cat /tmp/failed-connection-attempts-1 | \
 # connection then the server sent 1 segment of data and closed the connection
 # but the TCP length is also 0 so make this as failed
 
-    if [ $(awk '($8 == 1 && $9 == 1 && $10 == 0) {print $0}' \
+    if [ $(awk '($10 == 1 && $11 == 1 && $12 == 0) {print $0}' \
                      /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then echo $stream "IMC" | tr "_" " " \
+       then echo $stream $server:$sport $client:$cport "IMC" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
             continue
     fi
@@ -233,16 +242,16 @@ cat /tmp/failed-connection-attempts-1 | \
 # If the FIN flag is set and we are here it means that the ACK number is
 # greater than 1 or there is TCP data either way we are good
 
-    if [ $(awk '($8 == 1) {print $0}' \
+    if [ $(awk '($10 == 1) {print $0}' \
                      /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
        then continue
     fi
 
 # RESET flag is set, mark it as failed
 
-    if [ $(awk '($6 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
+    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
          wc -l) -gt 0 ]
-       then echo $stream "RST" | tr "_" " " \
+       then echo $stream $server:$sport $client:$cport "RST" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
             continue
     fi
@@ -250,17 +259,17 @@ cat /tmp/failed-connection-attempts-1 | \
 # If we are here the connection attempt has failed, the only question is are
 # there any SYNs from the server or not.
 
-    grep -E "$stream $server $client . . . 1" -m 1 \
+    grep -E "$stream $server $client $sport $cport . . . 1" -m 1 \
        /tmp/failed-connection-attempts-1 > /tmp/failed-connection-attempts-2
 
 # If there is a segment with the SYN flag set make it as SYN else mark it as
 # NOS.
 
-    if [ $(awk '($7 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
+    if [ $(awk '($9 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
          wc -l) -gt 0 ]
-       then echo $stream "SYN" | tr "_" " " \
+       then echo $stream $server:$sport $client:$cport "SYN" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
-       else echo $stream "NOS" | tr "_" " " \
+       else echo $stream $server:$sport $client:$cport "NOS" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
     fi
 
