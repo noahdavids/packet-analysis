@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>time-summary.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>time-summary.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro finds all the files in the current directory tree and then grep to filter that list of files to just the desired pcap files and finally capinfos to sort those files by start time and list the start and end times. The format of the times varies depending on the release of capinfos used. 
+<p>
+
+<b><h3>Usage</h3></b>
+time-summary.sh FILE-FILTER [ NEGATIVE-FILTER ]
+<br><br>
+<b>FILE-FILTER</b>
+<br>
+The FILE-FILTER string is used to filter all the files found.
+<br><br>
+<b>NEGATIVE-FILTER</b>
+<br>
+If a NEGATIVE-FILTER string is provided a second grep is run using the "-v"argument to filter out anything that matches the string.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1 - simple execution, any "pcap" file. Note that all the "pcapng" files are in the "ng" subdirecory. The "Month Day Year" format indicates that this was run with a version 1 capinfos.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ time-summary.sh pcap
+Feb  21  22:32:56  -  Feb  22  13:57:55  ./zero-windows.pcap
+Mar  5   22:24:46  -  Mar  5   22:42:42  ./vlan-ids.pcap
+Mar  9   17:08:13  -  Mar  9   17:09:38  ./ng/NAT-example-inside.pcapng
+Mar  10  10:34:30  -  Mar  10  10:34:54  ./proxy-example-inside.pcap
+Mar  10  11:33:01  -  Mar  10  11:34:15  ./ng/proxy-example-outside.pcapng
+Mar  10  11:34:01  -  Mar  10  11:34:17  ./ng/proxy-example-proxy.pcapng
+Mar  12  05:39:59  -  Mar  12  05:42:23  ./ng/dns.pcapng
+Mar  14  16:46:00  -  Mar  14  16:47:18  ./dns-2.pcap
+Mar  16  14:59:14  -  Mar  16  14:59:56  ./ng/proxy-example-2-client.pcapng
+Mar  16  15:58:56  -  Mar  16  15:59:20  ./ng/proxy-example-2-proxy-inside.pcapng
+Mar  16  15:59:04  -  Mar  16  15:59:14  ./ng/proxy-example-2-proxy-outside.pcapng
+Mar  27  19:18:13  -  Mar  27  19:24:02  ./ng/failed-connections.8-9-12-18-19-21-22.pcapng
+Mar  27  23:05:13  -  Mar  27  23:08:36  ./failed-connections.0-1-2.pcap
+Mar  28  20:14:49  -  Mar  28  20:22:47  ./ng/failed-connections.11.pcapng
+Apr  6   07:06:14  -  Apr  6   07:07:15  ./ng/failed-connections.65-380-1528-1592.pcapng
+Apr  6   07:07:15  -  Apr  6   07:07:16  ./ng/test.pcap.pcapng
+Apr  10  16:22:11  -  Apr  10  16:22:15  ./failed-connections.4-6-10.pcap
+Apr  11  04:20:32  -  Apr  11  04:33:24  ./failed-connections.0-5-12-14.pcap
+Apr  11  09:39:48  -  Apr  11  09:41:32  ./failed-connections.0-27-28-29-30-34-35-36-.pcap
+Apr  14  08:09:33  -  Apr  14  08:10:44  ./failed-connections.63-68-81-185-192-242-269.pcap
+Apr  16  06:05:41  -  Apr  16  06:11:07  ./failed-connections.7-19.pcap
+Apr  16  06:23:30  -  Apr  16  06:24:06  ./failed-connections.none.pcap
+Apr  24  00:39:38  -  Apr  24  00:40:43  ./resets-multiple.pcap
+May  14  21:39:35  -  May  14  21:52:26  ./retransmissions.pcap
+May  31  12:59:51  -  May  31  13:38:56  ./retransmissions-2.pcap
+Jun  11  06:31:54  -  Jun  11  06:32:10  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ipsec-not-running.pcapng
+Jun  11  06:33:49  -  Jun  11  06:34:21  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-something-else-listening-to-port-500.pcapng
+Jun  11  06:37:30  -  Jun  11  06:37:49  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ping-from-172.16.1.200.pcapng
+Jun  11  06:39:41  -  Jun  11  06:39:51  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ping-from-172.16.1.207.pcapng
+Jun  11  06:42:44  -  Jun  12  05:08:38  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-idle.pcapng
+Jun  13  05:43:53  -  Jun  13  05:59:08  ./retransmissions-remote-sender.pcap
+Jun  15  07:35:23  -  Jun  15  07:35:35  ./ng/PuTTY-connection.pcapng
+Jun  15  10:23:53  -  Jun  15  10:23:55  ./bif-test-172.30.5.61-753-172.30.4.165-2049.pcap
+Jul  3   11:33:45  -  Jul  3   11:33:53  ./ng/subscription_manager-register.pcapng
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_any.pcap
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_enp0s25.pcap
+Aug  8   13:25:34  -  Aug  8   13:38:41  ./ng/subscription-manager-register-attach.pcap.pcapng
+</pre>
+</td></tr>
+</table>
+Figure 1 - simple execution using version 1x of capinfos
+</center>
+<p>
+
+Example 2 - The same as example 1 but the "YYYY-MM-DD" format indicates that this was run with a version 2 capinfos.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ time-summary.sh pcap
+2017-02-21  22:32:56.151219     -  2017-02-22  13:57:55.832922     ./zero-windows.pcap
+2017-03-05  22:24:46.618934350  -  2017-03-05  22:42:42.839082280  ./vlan-ids.pcap
+2017-03-09  17:08:13.255663262  -  2017-03-09  17:09:38.224317181  ./ng/NAT-example-inside.pcapng
+2017-03-10  10:34:30.678342084  -  2017-03-10  10:34:54.678055924  ./proxy-example-inside.pcap
+2017-03-10  11:33:01.371801832  -  2017-03-10  11:34:15.713878644  ./ng/proxy-example-outside.pcapng
+2017-03-10  11:34:01.189070290  -  2017-03-10  11:34:17.631067499  ./ng/proxy-example-proxy.pcapng
+2017-03-12  05:39:59.648284915  -  2017-03-12  05:42:23.780170765  ./ng/dns.pcapng
+2017-03-14  16:46:00.576924898  -  2017-03-14  16:47:18.954770787  ./dns-2.pcap
+2017-03-16  14:59:14.323616814  -  2017-03-16  14:59:56.750761821  ./ng/proxy-example-2-client.pcapng
+2017-03-16  15:58:56.553282276  -  2017-03-16  15:59:20.553276020  ./ng/proxy-example-2-proxy-inside.pcapng
+2017-03-16  15:59:04.624195599  -  2017-03-16  15:59:14.775395260  ./ng/proxy-example-2-proxy-outside.pcapng
+2017-03-27  19:18:13.543163240  -  2017-03-27  19:24:02.710938559  ./ng/failed-connections.8-9-12-18-19-21-22.pcapng
+2017-03-27  23:05:13.703645     -  2017-03-27  23:08:36.096117     ./failed-connections.0-1-2.pcap
+2017-03-28  20:14:49.495222701  -  2017-03-28  20:22:47.258460956  ./ng/failed-connections.11.pcapng
+2017-04-06  07:06:14.294501     -  2017-04-06  07:07:15.744648     ./ng/failed-connections.65-380-1528-1592.pcapng
+2017-04-06  07:07:15.902092     -  2017-04-06  07:07:16.078143     ./ng/test.pcap.pcapng
+2017-04-10  16:22:11.140783     -  2017-04-10  16:22:15.080269     ./failed-connections.4-6-10.pcap
+2017-04-11  04:20:32.387440     -  2017-04-11  04:33:24.874862     ./failed-connections.0-5-12-14.pcap
+2017-04-11  09:39:48.609570     -  2017-04-11  09:41:32.571550     ./failed-connections.0-27-28-29-30-34-35-36-.pcap
+2017-04-14  08:09:33.307805     -  2017-04-14  08:10:44.782501     ./failed-connections.63-68-81-185-192-242-269.pcap
+2017-04-16  06:05:41.776513     -  2017-04-16  06:11:07.000041     ./failed-connections.7-19.pcap
+2017-04-16  06:23:30.423178     -  2017-04-16  06:24:06.877921     ./failed-connections.none.pcap
+2017-04-24  00:39:38.141942     -  2017-04-24  00:40:43.276566     ./resets-multiple.pcap
+2017-05-14  21:39:35.562935     -  2017-05-14  21:52:26.657157     ./retransmissions.pcap
+2017-05-31  12:59:51.749299     -  2017-05-31  13:38:56.136968     ./retransmissions-2.pcap
+2017-06-11  06:31:54.240674082  -  2017-06-11  06:32:10.257302386  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ipsec-not-running.pcapng
+2017-06-11  06:33:49.866153810  -  2017-06-11  06:34:21.879178693  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-something-else-listening-to-port-500.pcapng
+2017-06-11  06:37:30.697078695  -  2017-06-11  06:37:49.858086435  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ping-from-172.16.1.200.pcapng
+2017-06-11  06:39:41.281871193  -  2017-06-11  06:39:51.707142311  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-ping-from-172.16.1.207.pcapng
+2017-06-11  06:42:44.938334511  -  2017-06-12  05:08:38.234907782  ./ng/ipsec-connect-from-172.16.1.200-captured-on-172.16.1.207-idle.pcapng
+2017-06-13  05:43:53.316715     -  2017-06-13  05:59:08.345940     ./retransmissions-remote-sender.pcap
+2017-06-15  07:35:23.082335178  -  2017-06-15  07:35:35.162141945  ./ng/PuTTY-connection.pcapng
+2017-06-15  10:23:53.296804     -  2017-06-15  10:23:55.659890     ./bif-test-172.30.5.61-753-172.30.4.165-2049.pcap
+2017-07-03  11:33:45.917694813  -  2017-07-03  11:33:53.891457774  ./ng/subscription_manager-register.pcapng
+2017-07-13  10:22:27.825655     -  2017-07-13  10:22:42.832962     ./ssh_-i_any.pcap
+2017-07-13  10:22:27.825655     -  2017-07-13  10:22:42.832962     ./ssh_-i_enp0s25.pcap
+2017-08-08  13:25:34.549544245  -  2017-08-08  13:38:41.893218946  ./ng/subscription-manager-register-attach.pcap.pcapng
+</pre>
+</td></tr>
+</table>
+Figure 2 - simple execution using version 2x of capinfos
+</center>
+<p>
+
+
+Example 3 - just the pcap files, remove the pcapng files
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+# ../git/packet-analysis/time-summary.sh pcap pcapng
+Feb  21  22:32:56  -  Feb  22  13:57:55  ./zero-windows.pcap
+Mar  5   22:24:46  -  Mar  5   22:42:42  ./vlan-ids.pcap
+Mar  10  10:34:30  -  Mar  10  10:34:54  ./proxy-example-inside.pcap
+Mar  14  16:46:00  -  Mar  14  16:47:18  ./dns-2.pcap
+Mar  27  23:05:13  -  Mar  27  23:08:36  ./failed-connections.0-1-2.pcap
+Apr  10  16:22:11  -  Apr  10  16:22:15  ./failed-connections.4-6-10.pcap
+Apr  11  04:20:32  -  Apr  11  04:33:24  ./failed-connections.0-5-12-14.pcap
+Apr  11  09:39:48  -  Apr  11  09:41:32  ./failed-connections.0-27-28-29-30-34-35-36-.pcap
+Apr  14  08:09:33  -  Apr  14  08:10:44  ./failed-connections.63-68-81-185-192-242-269.pcap
+Apr  16  06:05:41  -  Apr  16  06:11:07  ./failed-connections.7-19.pcap
+Apr  16  06:23:30  -  Apr  16  06:24:06  ./failed-connections.none.pcap
+Apr  24  00:39:38  -  Apr  24  00:40:43  ./resets-multiple.pcap
+May  14  21:39:35  -  May  14  21:52:26  ./retransmissions.pcap
+May  31  12:59:51  -  May  31  13:38:56  ./retransmissions-2.pcap
+Jun  13  05:43:53  -  Jun  13  05:59:08  ./retransmissions-remote-sender.pcap
+Jun  15  10:23:53  -  Jun  15  10:23:55  ./bif-test-172.30.5.61-753-172.30.4.165-2049.pcap
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_any.pcap
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_enp0s25.pcap
+</pre>
+</td></tr>
+</table>
+Figure 3 - using both the FILE-FILTER and NEGATIVE-FILTER arguments
+</center>
+<p>
+
+
+Example 4 - using a more complex FILE-FILTER
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ time-summary.sh "dns|ssh"
+Mar  12  05:39:59  -  Mar  12  05:42:23  ./ng/dns.pcapng
+Mar  14  16:46:00  -  Mar  14  16:47:18  ./dns-2.pcap
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_any.pcap
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_enp0s25.pcap
+</pre>
+</td></tr>
+</table>
+Figure 4 - using an "or" file in the FILE FILTER
+</center>
+<p>
+
+Example 5 - using a more complex NEGATIVE-FILTER
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ time-summary.sh pcap [0123456789]
+Feb  21  22:32:56  -  Feb  22  13:57:55  ./zero-windows.pcap
+Mar  5   22:24:46  -  Mar  5   22:42:42  ./vlan-ids.pcap
+Mar  9   17:08:13  -  Mar  9   17:09:38  ./ng/NAT-example-inside.pcapng
+Mar  10  10:34:30  -  Mar  10  10:34:54  ./proxy-example-inside.pcap
+Mar  10  11:33:01  -  Mar  10  11:34:15  ./ng/proxy-example-outside.pcapng
+Mar  10  11:34:01  -  Mar  10  11:34:17  ./ng/proxy-example-proxy.pcapng
+Mar  12  05:39:59  -  Mar  12  05:42:23  ./ng/dns.pcapng
+Apr  6   07:07:15  -  Apr  6   07:07:16  ./ng/test.pcap.pcapng
+Apr  16  06:23:30  -  Apr  16  06:24:06  ./failed-connections.none.pcap
+Apr  24  00:39:38  -  Apr  24  00:40:43  ./resets-multiple.pcap
+May  14  21:39:35  -  May  14  21:52:26  ./retransmissions.pcap
+Jun  13  05:43:53  -  Jun  13  05:59:08  ./retransmissions-remote-sender.pcap
+Jun  15  07:35:23  -  Jun  15  07:35:35  ./ng/PuTTY-connection.pcapng
+Jul  3   11:33:45  -  Jul  3   11:33:53  ./ng/subscription_manager-register.pcapng
+Jul  13  10:22:27  -  Jul  13  10:22:42  ./ssh_-i_any.pcap
+Aug  8   13:25:34  -  Aug  8   13:38:41  ./ng/subscription-manager-register-attach.pcap.pcapng
+
+</pre>
+</td></tr>
+</table>
+Figure 5 - remove any pcap or pcapng file with a number in it
+</center>
+<p>
+
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-05</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
+

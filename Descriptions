@@ -51,6 +51,7 @@ stream-throughput.sh.html	An HTML description
 time-summary.sh			finds all files in the current directory and
                                 any sub directories and displays then start
                                 and end times in sorted order.
+time-summary.sh.html		An HTML description
 -------------------------------------------------------------------------------
 unterminated-connections.sh	find TCP connections that have not been
                                 closed or reset
