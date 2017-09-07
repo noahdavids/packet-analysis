@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>find-ips.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>find-ips.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses egrep to search a file and list out all the strings that match [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}. This will hopefully just be IPv4 addresses. It does not try to validate the strings to confirm that they are addresses. It then pipes the list to "sort -u" to get a list of unique addresses.
+<p>
+
+<b><h3>Usage</h3></b>
+find-ips.sh FILE-NAME
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file)
+<br><br>
+
+<b><h3>Examples</h3></b>
+Example 1 - Search the syslog file for IP addresses
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ sudo ./find-ips.sh /var/log/syslog
+192.168.1.1
+192.168.1.12
+192.168.122.1
+192.168.122.27
+255.255.255.0
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - Search the secure file for IP addresses
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ sudo ./find-ips.sh /var/log/secure
+192.168.68.76
+192.168.2.22
+192.168.40.34
+192.168.50.15
+172.16.22.3
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-05</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
