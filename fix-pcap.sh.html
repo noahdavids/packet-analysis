@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>fix-pcaps.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>fix-pcap.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro fixes pcap that end in a middle of a packet. It does this by reading the file and writing a new file. The damaged packet will not be written. It then renames the newly output file back to the original name.
+<p>
+
+<b><h3>Usage</h3></b>
+fix-pcap.sh FILE-NAME
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+
+<b><h3>Example</h3></b>
+Example 1 - First shows the error that tshark (or Wireshark) would show when the file is read. the "-q" argument is used so that the actual packets are not displayed. Then fix-pcap.sh is run. The first part of fix-pcap.sh runs tcpdump to read and write the file. Note that it also reports when error when it gets to the last packet. The second part of fix-pcap.sh recreates the original file. Finally, tshark is again run to show that there is no error.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ tshark -r test.pcap -q
+tshark: The file "test.pcap" appears to have been cut short in the middle of a packet.
+
+$ ./fix-pcap.sh test.pcap 
+reading from file test.pcap, link-type EN10MB (Ethernet)
+tcpdump: pcap_loop: truncated dump file; tried to read 1514 captured bytes, only got 1496
+
+$ tshark -r test.pcap -q
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-06</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

@@ -13,9 +13,20 @@ failed-connection-attempts.sh   find TCP connection attempts that have a failed
                                 for a description.
 failed-connection-attempts.sh.html An HTML description
 -------------------------------------------------------------------------------
+find-ips.sh			uses egrep to list all strings in a file that
+				match an IPv4 address format and the sort -u to
+				get a unique list. Really just a one-liner by
+				this way I do not have to remember (or type)
+				the egrep string.
+find-ips.sh.htmp		An HTML description
+-------------------------------------------------------------------------------
 find-reset-connections.sh	find TCP connections that have been reset
                                 without being closed.
 find-reset-connections.sh.html	An HTML description
+-------------------------------------------------------------------------------
+fix-pcap.sh			removes a partial packet at the end of a
+				packet trace file.
+fix-pcap.sh.html		An HTML description
 -------------------------------------------------------------------------------
 local-drops			For each retransmitted TCP segment determine
                                 if the segment is seen more than once
