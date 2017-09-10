@@ -8,17 +8,21 @@
 # TCP stream number followed by the server-ip:server-port and
 # client-ip:client-port. The 4th coloumn is an indicator of why the stream
 # made it into the table.
-#	RST - first response from the server is a ReSeT
+#	RST - first response from the server is a ReSeT without ACKing any
+#	      data
 #	CHA - first response from the server is a CHAllenge ACK
 #	IMC - server just accepts and then IMmediately Closes the connection
+#             with a FIN
 #	SYN - the only response from the server is an ACK-SYN
 #	NOS - there are NO tcp Segments from the server
+#       CLR - The server responds with an ACK-SYN but then the CLient sends
+#             a Reset or an ACK and then a reset
 
 # The presence or absense of an ACK-SYN is not enough to determine if a 
 # connect attempt succeeded or not. It is possible that the ACK-SYN is not
 # captured for some reason. Also if the listen backlog is filled it is
 # possible that server will send a ACK-SYNs but then still not complete the
-# 3-way-handshake and continue to retransmit ACk-SYNs. You also cannot just
+# 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just
 # look for retransmitted SYNs. First a SYN may be retransmitted multiple
 # times before being accepted. Second, if the server responds with an ICMP
 # destination unreachable or a reset the SYN may not be retransmitted. 
@@ -38,15 +42,19 @@
 # the server accepts the connection and then immediatelty sends a FIN the
 # conection attempt is considered as failed. Technically this is not a failed
 # TCP connection attempt but since the client application most likely reported
-# an error it gets added to the list of failed connection attempts. 
+# an error it gets added to the list of failed connection attempts. There is 
+# also the case of the server sending a ACK-SYN and the client sending an ACK
+# followed by a RESET. technically this is also a completed connection but
+# most likely the server will report an error so it is flagged as CLR. the case
+# of the client responding to the ACK-SYN with a reset is clearly a failed
+# connection (no ACK from the client) and is also flagged as CLR.
 
 # You can monitor the progress of the script by looking at
 # /tmp/failed-connection-attempts-4. As each stream number with a SYN is
 # processed the number is written to the -4 file.
 #         tail -f /tmp/failed-connection-attempts-4 2>/dev/null
 # is your friend. Note that if its a large file with just a few connection
-# attempts -4 may not update very fast. Also 
-
+# attempts -4 may not update very fast.
 
 
 # Version 1.0 April 2, 2017
@@ -67,8 +75,10 @@
 #  and removed the suspected list (again).
 # Version 2.1 August 22, 2017
 #  Added the server:port client:port columns to the output
+# Version 2.2 September 10, 2017
+#  Added CLR test
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.0_2017-04-16"
+FAILEDCONNECTIONATTEMPTSVERSION="2.2_2017-09-10"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -257,23 +267,42 @@ cat /tmp/failed-connection-attempts-1 | \
     fi
 
 # If we are here the connection attempt has failed, the only question is are
-# there any SYNs from the server or not.
+# there any SYNs from the server or not and what did the client do.
 
     grep -E "$stream $server $client $sport $cport . . . 1" -m 1 \
        /tmp/failed-connection-attempts-1 > /tmp/failed-connection-attempts-2
 
-# If there is a segment with the SYN flag set make it as SYN else mark it as
-# NOS.
+# The server did not sent a SYN so flag the connection as NOS
 
     if [ $(awk '($9 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
-         wc -l) -gt 0 ]
-       then echo $stream $server:$sport $client:$cport "SYN" | tr "_" " " \
+         wc -l) -eq 0 ]
+       then echo $stream $server:$sport $client:$cport "NOS" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
-       else echo $stream $server:$sport $client:$cport "NOS" | tr "_" " " \
-                                   >> /tmp/failed-connection-attempts-3
+            continue
     fi
 
+# A SYN from the server was found so now the question is did the client send
+# just SYNs and then a RESET (or an ACK and a RESET). First get the first 100
+# lines from the client to the server. I admit that 100 is arbitrary but for
+# this to make the wrong determination the client would have to have sent 98
+# SYNs, at the same time I do not want to copy what might be a lot of data.
+# Then remove the SYNs but stop after 2 matches this allows for an ACK
+# followed by a RESET or just a reset.
+
+    grep -E "$stream $client $server $cport $sport" -m 100 \
+               /tmp/failed-connection-attempts-1 | \
+         grep -v -E "$stream $client $server $cport $sport . . . 1" -m 2 \
+                                          > /tmp/failed-connection-attempts-5
+
+    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-5 | \
+         wc -l) -eq 1 ]
+      then echo $stream $server:$sport $client:$cport \
+                   "CLR" | tr "_" " " >> /tmp/failed-connection-attempts-3
+      else echo $stream $server:$sport $client:$cport \
+                   "SYN" | tr "_" " " >> /tmp/failed-connection-attempts-3
+    fi
   done
+
 
 # output the results
 

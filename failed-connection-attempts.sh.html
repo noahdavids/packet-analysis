@@ -17,23 +17,25 @@
 <p>
 This macro searches a packet trace looking for connection attempts that failed. 
 
-The first column is the TCP stream number followed by the server-ip:server-port and client-ip:client-port. The 4th coloumn is an indicator of why the stream made it into the table.
+The first column is the TCP stream number followed by the server-ip:server-port and client-ip:client-port. The 4th column is an indicator of why the stream made it into the table.
 <br>
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspRST - server responds with a ReSeT without ACKing any data
 <br>
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspCHA - first response from the server is a CHAllenge ACK
 <br>
-&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspIMC - server just accepts and then IMmediately Closes the connection
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspIMC - server just accepts and then IMmediately Closes the connection with a FIN
 <br>
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspSYN - the only response from the server is an ACK-SYN
 <br>
 &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNOS - there are NO tcp Segments from the server
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspCLR - the server responds with a ACK-SYN but the CLient sends a Reset or an ACK followed by a reset.
 <p>
 
-The presence or absence of an ACK-SYN is not enough to determine if a  connect attempt succeeded or not. It is possible that the ACK-SYN is not captured for some reason. Also if the listen backlog is filled it is possible that server will send a ACK-SYNs but then still not complete the 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just look for retransmitted SYNs. First a SYN may be retransmitted multiple times before being accepted. Second, if the server responds with an ICMP destination unreachable or a reset the SYN may not be retransmitted. Also if the server responds with a challenge ACK instead of a ACK-SYN the client can send its own reset.
+The presence or absence of an ACK-SYN is not enough to determine if a connect attempt succeeded or not. It is possible that the ACK-SYN is not captured for some reason. Also if the listen backlog is filled it is possible that server will send a ACK-SYNs but then still not complete the 3-way-handshake and continue to retransmit ACK-SYNs. You also cannot just look for retransmitted SYNs. First a SYN may be retransmitted multiple times before being accepted. Second, if the server responds with an ICMP destination unreachable or a reset the SYN may not be retransmitted. Also if the server responds with a challenge ACK instead of a ACK-SYN the client can send its own reset.
 <p>
 
-A connection attempt is considered as succeeded if the client sends a SYN and the server sends a segment with the PSH flag set since that means that the server has sent data. Also if the ACK number of the first ACK segment sent by the server with no other TCP flags set is &lt 65535. That is an arbitrary cut off but large enough that several segments could be dropped without changing the conclusion and small enough that the probability that it is a challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the server sends a FIN with an ACK number > 1 it means that it has ACKed something besides the SYN, note that this might be the FIN from the client but either way it is considered a succeeded connection. On the other hand if the server accepts the connection and then immediately sends a FIN the connection attempt is considered as failed. Technically this is not a failed TCP connection attempt but since the client application most likely reported an error it gets added to the list of failed connection attempts. 
+A connection attempt is considered as succeeded if the client sends a SYN and the server sends a segment with the PSH flag set since that means that the server has sent data. Also if the ACK number of the first ACK segment sent by the server with no other TCP flags set is &lt 65535. That is an arbitrary cut off but large enough that several segments could be dropped without changing the conclusion and small enough that the probability that it is a challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the server sends a FIN with an ACK number > 1 it means that it has ACKed something besides the SYN, note that this might be the FIN from the client but either way it is considered a succeeded connection. On the other hand if the server accepts the connection and then immediately sends a FIN the connection attempt is considered as failed. Technically this is not a failed TCP connection attempt but since the client application most likely reported an error it gets added to the list of failed connection attempts. There is  also the case of the server sending a ACK-SYN and the client sending an ACK followed by a RESET. technically this is also a completed connection but most likely the server will report an error so it is flagged as CLR. the case of the client responding to the ACK-SYN with a reset is clearly a failed connection (no ACK from the client) and is also flagged as CLR.
 <p>
 
 You can monitor the progress of the script by looking at /tmp/failed-connection-attempts-4. As each stream number with a SYN is processed the number is written to the -4 file.
@@ -232,14 +234,27 @@ Figure 5
 </center>
 <p>
 
-Example 6 shows a trace where there were no failed connections found.
+Example 6 shows a Client reset connection
+
 <center>
 <table border=5>
 <tr><td align=left>
-<pre>                                                                   
-$ ./failed-connection-attempts.sh test6.pcap
-failed-connection-attempts.sh test6.pcap
-No failed connection attempts found
+<pre>   
+$ ./failed-connection-attempts.sh test-6.pcap
+failed-connection-attempts.sh test-6.pcap
+63   172.16.91.20:80  192.168.12.154:63124  CLR
+68   172.16.91.20:80  192.168.12.154:63129  CLR
+81   172.16.91.20:80  192.168.12.154:63132  CLR
+185  172.16.91.20:22  10.217.197.5:52155    IMC
+192  172.16.91.20:80  172.21.20.64:60009    SYN
+242  172.16.91.20:80  172.21.20.37:51383    SYN
+269  172.16.91.20:80  172.21.20.90:54142    SYN
+
+$ tshark -r test-6.pcap -Y "tcp.stream == 63" -o tcp.ignore_tcp_timestamps:TRUE
+ 4564  14.356779 192.168.12.154 &rarr; 172.16.91.20 TCP 63 63124 &rarr; 80 [SYN] Seq=0 Win=8192 Len=0 MSS=1187 WS=4 SACK_PERM=1
+ 4565  14.356799 172.16.91.20 &rarr; 192.168.12.154 TCP 63 80 &rarr; 63124 [SYN, ACK] Seq=0 Ack=1 Win=5840 Len=0 MSS=1460 SACK_PERM=1 WS=4
+ 4568  14.370581 192.168.12.154 &rarr; 172.16.91.20 TCP 63 63124 &rarr; 80 [ACK] Seq=1 Ack=1 Win=66472 Len=0
+ 4569  14.370699 192.168.12.154 &rarr; 172.16.91.20 TCP 63 63124 &rarr; 80 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
 </pre>
 </td></tr>
 </table>
@@ -247,11 +262,26 @@ Figure 6
 </center>
 <p>
 
+Example 7 shows a trace where there were no failed connections found.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./failed-connection-attempts.sh test7.pcap
+failed-connection-attempts.sh test7.pcap
+No failed connection attempts found
+</pre>
+</td></tr>
+</table>
+Figure 7
+</center>
+<p>
+
 <br /><br />
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-08-23</h5>
+This page was last modified on 17-09-10</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
