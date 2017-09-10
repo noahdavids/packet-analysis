@@ -17,6 +17,8 @@
 <p>
 This macro finds all the files in the current directory tree and then grep to filter that list of files to just the desired pcap files and finally capinfos to sort those files by start time and list the start and end times. The format of the times varies depending on the release of capinfos used. 
 <p>
+The script cannot process a file when there is a space somewhere in the file's path. These files are skipped but a list of skipped files is reported at the end of the output.
+<p>
 
 <b><h3>Usage</h3></b>
 time-summary.sh FILE-FILTER [ NEGATIVE-FILTER ]
@@ -213,6 +215,31 @@ Aug  8   13:25:34  -  Aug  8   13:38:41  ./ng/subscription-manager-register-atta
 Figure 5 - remove any pcap or pcapng file with a number in it
 </center>
 <p>
+
+
+Example 6 - includes a report about skipped files because of a space in the file's path. There are two such files. The first has a space in the name and the second a space in a subdirectory name
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./time-summary.sh pcap$
+2017-03-05  22:24:46.618934  -  2017-03-05  22:27:52.437116  ./test/x.pcap
+2017-03-05  22:24:49.676759  -  2017-03-05  22:29:57.908581  ./test/y.pcap
+2017-07-25  20:58:28.085258  -  2017-07-25  21:00:16.347813  ./test.pcap
+2017-07-25  21:12:35.175911  -  2017-07-25  21:50:19.643777  ./3rd-try.pcap
+The following where not processed because they had a space in their path
+./new\ test.pcap
+./x\ y/z.pcap
+</pre>
+</td></tr>
+</table>
+Figure 4 - using an "or" file in the FILE FILTER
+</center>
+<p>
+
+
+
+
 
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">

@@ -1,11 +1,14 @@
 #!/bin/bash
 # time-summary.sh begins on the previous line
 #
-# This macro finds all pcap files in the current directory tree and uses
-# capinfos to sort them by start time.
+# This macro finds all the files in the current directory tree and then grep
+# to filter that list of files to just the desired pcap files and finally
+# capinfos to sort those files by start time and list the start and end times.
+# The format of the times varies depending on the release of capinfos used. 
 #
-# Note that version 1 of capinfos will not sort correctly if the set of files
-# spans multiple months. See example 1
+# The script cannot process a file when there is a space somewhere in the
+# file's path. These files are skipped but a list of skipped files is reported
+# at the end of the output.
 #
 # Version 1.0 August 24 2017
 # Version 1.1 August 29 2017
@@ -18,8 +21,14 @@
 #   first on tha list and then just process each file in order. This isn't
 #   needed for capinfso 2x where the date is YYYY-MM-DD time. But the script
 #   does it anyway. 
-#
-#TIMESUMMARYVERSION="1.2_2017-08-30"
+# Version 1.3 September 1 2017
+#   corrections to various comments
+# Version 1.4 September 9 2017
+#   filter out files with a space in the path and report those files at the
+#   end. I just could find a clean way to include them and it is probably
+#   easier to remove the space in the name manually
+
+#TIMESUMMARYVERSION="1.4_2017-09-09"
 #
 # from https://github.com/noahdavids/packet-analysis.git
 #
@@ -36,7 +45,7 @@
 
 if [ $# -eq 0 -o $# -gt 2 ]
    then echo "Usage:"
-        echo "   time-summary.sh FILE-FILTER"
+        echo "   time-summary.sh FILE-FILTER [ NEGATIVE-FILTER ]"
         echo "      FILE-FILTER is a string that idenifies the files"
         echo "      NEGATIVE-FILTER strings to filter out of the file list"
         exit
@@ -51,32 +60,47 @@ if [ $# -eq 2 ]
       find . -type f | grep -E $FILTER > /tmp/time-summary-1
 fi
 
+# Filter out anything with a space in the path -- this will screw things up.
+# it is probably possible to allow a space in the path but frankly I couldn't
+# figure out how to in anything resenbling a straight forward approach.
+cat /tmp/time-summary-1 | awk '(NF == 1) {print $0}' > /tmp/time-summary-2
+
 # Get the start time in epoch time for each file and sort the file list. The
 # time is the last column but the label will vary ("Start time" or "First
 # packet time") depending on capinfos version. So I copy the time from the
 # last column to the first column and sort on the first column. Then extract
 # the file name in the second column.
-cat /tmp/time-summary-1 | while read file; do capinfos -aS $file \
+cat /tmp/time-summary-2 | while read file; do capinfos -aS $file \
     |  tr "\n" " " | sed "s/File name:/\n/g" | awk '{print $NF " " $0}'; \
-    done | sort -nk1 | awk '{print $2}' > /tmp/time-summary-2
+    done | sort -nk1 | awk '{print $2}' > /tmp/time-summary-3
 
 # for each file get the start and stop time in human readable time. Note
-# that /tmp/time-summary-2 will have blank lines the $(#file) returns
+# that /tmp/time-summary-3 will have blank lines the $(#file) returns
 # the number of characters in the $file so I test for 0 to skip the
 # blank lines. Also if the packets have been size limited there is a message
 # the "grep -v" filters out the line with that message.
-cat /tmp/time-summary-2 | while read file; do if [ "${#file}" -gt 0 ]; then \
+cat /tmp/time-summary-3 | while read file; do if [ "${#file}" -gt 0 ]; then \
     capinfos -ae $file | grep -v "Packet size limit" | tr "\n" " " \
-    | sed "s/File name:/\n/g"; fi; done > /tmp/time-summary-3
+    | sed "s/File name:/\n/g"; fi; done > /tmp/time-summary-4
 
 # create a table "start-time" - ""end-time" File-path. The first line in
-# /tmp/time-summary-3 is blank, the "(NF > 1)" awk test skips that line.
-if [ $(grep "First packet time" /tmp/time-summary-3 | wc -l) -gt 0 ]
+# /tmp/time-summary-4 is blank, the "(NF > 1)" awk test skips that line.
+if [ $(grep "First packet time" /tmp/time-summary-4 | wc -l) -gt 0 ]
    then
-     cat /tmp/time-summary-3 | awk '(NF > 1) {print $5 " " $6 " - " $10 " " \
+     cat /tmp/time-summary-4 | awk '(NF > 1) {print $5 " " $6 " - " $10 " " \
          $11 " " $1}' | column -t
    else
-     cat /tmp/time-summary-3 | awk '(NF > 1) {print $5 " " $6 " " $7 " - " \
+     cat /tmp/time-summary-4 | awk '(NF > 1) {print $5 " " $6 " " $7 " - " \
          $12 " " $13 " " $14 " " $1}' | column -t
 fi
+
+# report anything with a space that was filtered out
+cat /tmp/time-summary-1 | awk '(NF != 1) {print $0}' > /tmp/time-summary-5
+if [ $(cat /tmp/time-summary-5 | wc -l) -gt 0 ]
+   then
+      echo "The following where not processed because they had a space \
+in their path"
+      cat /tmp/time-summary-5
+fi
+
 
