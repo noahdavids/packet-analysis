@@ -28,13 +28,20 @@ fix-pcap.sh			removes a partial packet at the end of a
 				packet trace file.
 fix-pcap.sh.html		An HTML description
 -------------------------------------------------------------------------------
-local-drops			For each retransmitted TCP segment determine
+local-drops.sh			For each retransmitted TCP segment determine
                                 if the segment is seen more than once
+local-drops.sh.html		An HTML description
 -------------------------------------------------------------------------------
 packet-matcher.sh		Extracts byte strings from a TCP stream in a 
 				template trace and looks for the strings in a
 				target trace. The goal is to find a match TCP
 				stream in the target trace file
+-------------------------------------------------------------------------------
+packet-matcher-faster.sh	Compares IP ID and absolute TCP sequence and
+				ACK numbers between two traces to match up
+				TCP segments where the IP addresses and or TCP
+				have been changed (i.e. NAT)
+packet-matcher-faster.sh.html	An HTML description
 -------------------------------------------------------------------------------
 percent-retransmissions.sh	For every connection in the trace file
 				calculate the percentage of retransmissions

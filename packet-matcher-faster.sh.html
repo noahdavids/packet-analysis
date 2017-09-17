@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>packet-matcher-faster.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>packet-matcher-faster.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro searches for TCP packets in one file that match packets in another file. It is useful when NAT has changed the IP addresses and or port numbers. It uses the combination of IP ID and absolute sequence and ACK numbers as the key.
+<p>
+Output is the matching pairs of tshark output, 1 from each file. This is a slow process since each file must be searched for each id-sequence-number-ack-number key. Since the typical goal is just to identify the matching streams you can limit this to just a subset (like 1) of matching segments.
+<p>
+If the script finds more than 2 matches per key it assumes some packets are duplicated. This would generate false positives so the script prints the key values so you can investigate and aborts the matching phase. 
+<p>
+This is packet-matcher-faster because it is faster than packet-matcher. But packet-matcher looks at actual data contents so it can match packets through proxies or other middleware boxes where the entire TCP header is changed.
+
+<b><h3>Usage</h3></b>
+packet-matcher-faster.sh FILE1 FILTER FILE2 COUNT 
+<br><br>
+<b>FILE1</b>
+<br>
+The file name (or path to the file) that provides the "original" segments
+<br><br>
+<b>FILTER</b>
+<br>
+A tshark filter to select specific segments from FILE1, for example a specific stream. If all segments are of interest use the filter "tcp"
+<br><br>
+<b>FILE2</b>
+<br>
+The file name (or path to the file) to look for the matching segments
+<br><br>
+<b>COUNT</b>
+<br>
+How many matching segments to actually display.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1 - Look for matches for TCP Stream 3, print all matching segments.
+<p>
+Note that the packets are not printed in order. They are sorted by id-seq-ack number so typically all the packets from one IP address will print out first. Here we have packets from the server printing before packets from the client. The first match printed is the SYN-ACK, the SYN follows much later. Which direction is printed first will be random and if the connection goes on for more than 64K packets or a host is very busy and the IP ID values cycle the order can change and later packets from one host may be printed before ealier packets from the same host.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./packet-matcher-faster.sh nat-inside.cap "tcp.stream == 3" nat-outside.cap 0
+===================================================================
+0x000091a4 594145378 1308533172
+nat-inside.cap
+      95 2017-09-10 09:32:19.938674070 216.58.193.206 → 192.168.1.200 TCP 3 0x91a4 (37284) 443 → 48280 [SYN, ACK] Seq=594145378
+Ack=1308533172 Win=42408 Len=0 MSS=1380 SACK_PERM=1 TSval=735705762 TSecr=263274356 WS=256
+
+nat-outside.cap
+      22 2017-09-10 10:30:17.632105 216.58.193.206 → 192.168.0.10 TCP 2 0x91a4 (37284) 443 → 61496 [SYN, ACK] Seq=594145378
+Ack=1308533172 Win=42408 Len=0 MSS=1380 SACK_PERM=1 TSval=735705762 TSecr=263274356 WS=256
+
+===================================================================
+0x0000920e 594145378 1308533172
+nat-inside.cap
+      104 2017-09-10 09:32:19.939272972 216.58.193.206 → 192.168.1.200 TCP 3 0x920e (37390) [TCP Out-Of-Order] 443 → 48280 [SYN, ACK]
+Seq=594145378 Ack=1308533172 Win=42408 Len=0 MSS=1380 SACK_PERM=1 TSval=735706062 TSecr=263274356 WS=256
+
+nat-outside.cap
+      26 2017-09-10 10:30:17.632712 216.58.193.206 → 192.168.0.10 TCP 2 0x920e (37390) [TCP Out-Of-Order] 443 → 61496 [SYN, ACK]
+Seq=594145378 Ack=1308533172 Win=42408 Len=0 MSS=1380 SACK_PERM=1 TSval=735706062 TSecr=263274356 WS=256
+
+===================================================================
+
+. . . . . . 
+
+===================================================================
+0x00009ec7 1308533171 0
+nat-inside.cap
+      80 2017-09-10 09:32:19.298969128 192.168.1.200 → 216.58.193.206 TCP 3 0x9ec7 (40647) 48280 → 443 [SYN] Seq=1308533171
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263274356 TSecr=0 WS=128
+
+nat-outside.cap
+      20 2017-09-10 10:30:16.993333 192.168.0.10 → 216.58.193.206 TCP 2 0x9ec7 (40647) 61496 → 443 [SYN] Seq=1308533171
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263274356 TSecr=0 WS=128
+
+===================================================================
+0x00009ec8 1308533172 594145379
+nat-inside.cap
+      96 2017-09-10 09:32:19.938700626 192.168.1.200 → 216.58.193.206 TCP 3 0x9ec8 (40648) 48280 → 443 [ACK] Seq=1308533172
+Ack=594145379 Win=14720 Len=0 TSval=263274996 TSecr=735705762
+
+nat-outside.cap
+      33 2017-09-10 10:30:17.633383 192.168.0.10 → 216.58.193.206 TCP 2 0x9ec8 (40648) 61496 → 443 [ACK] Seq=1308533172
+Ack=594145379 Win=14720 Len=0 TSval=263274996 TSecr=735705762
+
+===================================================================
+
+. . . . . .
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - Look for matches for segments from IP source address, print the first match
+<p>
+Note that the filter includes "&& tcp" so that only TCP segments are selected. Without that any packet from the source address will be
+selected and it is possible that just the IP ID will not be unique and cause a false positive for duplicate packet.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./packet-matcher-faster.sh nat-inside.cap "ip.src == 192.168.1.200 && tcp" nat-outside.cap 1
+===================================================================
+0x000002cd 3307421960 0
+nat-inside.cap
+      221 2017-09-10 09:32:20.403770521 192.168.1.200 → 216.58.193.206 TCP 11 0x02cd (717) 48290 → 443 [SYN] Seq=3307421960          
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263275461 TSecr=0 WS=128
+
+nat-outside.cap
+      139 2017-09-10 10:30:18.097934 192.168.0.10 → 216.58.193.206 TCP 11 0x02cd (717) 7125 → 443 [SYN] Seq=3307421960
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263275461 TSecr=0 WS=128
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - Look for matches for any segments (filter is just tcp), print the first 5
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./packet-matcher-faster.sh nat-inside.cap "tcp" nat-outside.cap 5
+===================================================================
+0x000002cd 3307421960 0
+nat-inside.cap
+      221 2017-09-10 09:32:20.403770521 192.168.1.200 → 216.58.193.206 TCP 11 0x02cd (717) 48290 → 443 [SYN] Seq=3307421960          
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263275461 TSecr=0 WS=128
+
+nat-outside.cap
+      139 2017-09-10 10:30:18.097934 192.168.0.10 → 216.58.193.206 TCP 11 0x02cd (717) 7125 → 443 [SYN] Seq=3307421960
+Win=14600 Len=0 MSS=1460 SACK_PERM=1 TSval=263275461 TSecr=0 WS=128
+
+===================================================================
+0x000002ce 3307421961 2145195327
+nat-inside.cap
+      223 2017-09-10 09:32:20.452004837 192.168.1.200 → 216.58.193.206 TCP 11 0x02ce (718) 48290 → 443 [ACK] Seq=3307421961
+Ack=2145195327 Win=14720 Len=0 TSval=263275509 TSecr=607325268
+
+nat-outside.cap
+      141 2017-09-10 10:30:18.145846 192.168.0.10 → 216.58.193.206 TCP 11 0x02ce (718) 7125 → 443 [ACK] Seq=3307421961
+Ack=2145195327 Win=14720 Len=0 TSval=263275509 TSecr=607325268
+
+===================================================================
+0x000002cf 3307421961 2145195327
+nat-inside.cap
+      224 2017-09-10 09:32:20.452336859 192.168.1.200 → 216.58.193.206 SSL 11 0x02cf (719) Client Hello
+
+nat-outside.cap
+      142 2017-09-10 10:30:18.146124 192.168.0.10 → 216.58.193.206 SSL 11 0x02cf (719) Client Hello
+
+===================================================================
+0x000002d0 3307422150 2145196745
+nat-inside.cap
+      227 2017-09-10 09:32:20.476451418 192.168.1.200 → 216.58.193.206 TCP 11 0x02d0 (720) 48290 → 443 [ACK] Seq=3307422150
+Ack=2145196745 Win=17536 Len=0 TSval=263275534 TSecr=607325293
+
+nat-outside.cap
+      147 2017-09-10 10:30:18.170201 192.168.0.10 → 216.58.193.206 TCP 11 0x02d0 (720) 7125 → 443 [ACK] Seq=3307422150
+Ack=2145196745 Win=17536 Len=0 TSval=263275534 TSecr=607325293
+
+===================================================================
+0x000002d1 3307422150 2145198163
+nat-inside.cap
+      229 2017-09-10 09:32:20.476571368 192.168.1.200 → 216.58.193.206 TCP 11 0x02d1 (721) 48290 → 443 [ACK] Seq=3307422150
+Ack=2145198163 Win=20480 Len=0 TSval=263275534 TSecr=607325293
+
+nat-outside.cap
+      148 2017-09-10 10:30:18.170297 192.168.0.10 → 216.58.193.206 TCP 11 0x02d1 (721) 7125 → 443 [ACK] Seq=3307422150
+Ack=2145198163 Win=20480 Len=0 TSval=263275534 TSecr=607325293
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Example 4 - Duplicate segment warning
+<p>
+Duplicate segments can happen if the packet trace was enabled on more than 1 interface (tcpdump -i any is a common cause). Also if the trace was enable on a switch spanning multiple ports or the switching plane or a router handling multiple segments.
+<p>
+Note that the temporary file that holds the duplicates is different depending on if the duplicates are found in FILE1 or FILE2.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./packet-matcher-faster.sh duplicate-packets-tx-on.pcap "tcp" nat-outside.cap 1                                                        
+Presence of more than 2 matches per id-seq-ack in
+duplicate-packets-tx-on.pcap
+possible duplicate packets in trace - remove duplicates
+with "editcap -d" before proceeding
+list of duplicated id-seq-ack keys can be found in
+/tmp/packet-matcher-faster-3
+
+Review the list of duplicates
+
+$ cat /tmp/packet-matcher-faster-3 | head -5
+      2 0x0000076b-2106007122-2203221999
+      2 0x0000076c-2106007270-2203222199
+      2 0x0000076d-2106007270-2203222199
+      2 0x0000076e-2106007426-2203222407
+      2 0x0000076f-2106007426-2203222407
+
+Display the first duplicate -- NOTE that the first segment has a checksum error while the second does not. This can happen if there  
+is some kind of off loading enabled on the interface.
+
+$ tshark -r duplicate-packets-tx-on.pcap -Y "ip.id == 0x0000076b && tcp.seq == 2106007122 && tcp.ack == 2203221999"
+-z proto,colinfo,tcp.checksum.status,tcp.checksum.status -o tcp.check_checksum:TRUE
+    8   0.475981 192.168.1.200 → 192.168.1.48 NFS 2 0x076b (1899) V4 Call GETATTR FH: 0x7905610b  tcp.checksum.status == "Bad"
+    9   0.476003 192.168.1.200 → 192.168.1.48 TCP 2 0x076b (1899) [TCP Retransmission] 41680 → 2049 [PSH, ACK] Seq=2106007122
+Ack=2203221999 Win=47008 Len=148 TSval=674038841 TSecr=468805771  tcp.checksum.status == "Good"
+
+
+Try filtering on just the Good TCP checksum segments
+
+$ ./packet-matcher-faster.sh duplicate-packets-tx-on.pcap "tcp.checksum.status == Good" nat-outside.cap 1
+Presence of more than 2 matches per id-seq-ack in
+duplicate-packets-tx-on.pcap
+possible duplicate packets in trace - remove duplicates
+with "editcap -d" before proceeding
+list of duplicated id-seq-ack keys can be found in
+/tmp/packet-matcher-faster-3
+
+
+Still didn't work but it is a different set of duplicate packets
+
+$ cat /tmp/packet-matcher-faster-3 | head -5
+      2 0x0000076c-2106007270-2203222199
+      2 0x0000076e-2106007426-2203222407
+      2 0x00000770-2106007574-2203222607
+      2 0x00000772-2106007678-2203222655
+      2 0x00005596-1200066499-286060463
+
+
+Use editcap to remove duplicates that it can remove. editcap cannot remove duplicates where one segment has a bad checksum or
+includes a VLAN ID, or the IP TTL value is different. You will need a filter to select just one set of these kinds of duplicates.
+
+$ editcap -d duplicate-packets-tx-on.pcap nodups.pcap
+187 packets seen, 55 packets skipped with duplicate window of 5 packets.
+
+Try again, still filtering on just "tcp.checksum.status == Good"
+
+$ ./packet-matcher-faster.sh nodups.pcap "tcp.checksum.status == Good" nat-outside.cap 1
+No matches found between nodups.pcap and nat-outside.cap
+
+After all that it didn't find any duplicates but that the process
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+Example 5 - No match warning
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./packet-matcher-faster.sh nat-inside.cap "tcp.stream == 0" nat-outside.cap 1                                                          
+No matches found between nat-inside.cap and nat-outside.cap
+</pre>
+</td></tr>
+</table>
+Figure 5
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-17</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
