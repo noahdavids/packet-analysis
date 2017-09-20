@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>packet-matcher.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>packet-matcher.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to match segments from 1 TCP stream in a "template" trace with segments in another, target, trace. It matches by extracting a string of TCP data from a segment in the template stream and looking for a frame that contains the same string in the target trace. So for every segment in the template stream the target trace is searched once. This is not a speedy process. The strings do no have to be in the same relative position in the template and target segments.
+<p>
+The output is first a count of the number of segments found in the template file followed by two tables. The first table is of uniquely matched segments each row is the frame number from the template trace, the frame number from the target trace and the stream number that the target frame belongs to. There is also a count of matches. The second table is of non-unique matches, that is the template occurred more than once in the target. Each row is the template frame number followed by the list of matching target frames. Either of these tables may be skipped if they are empty. Non matching template frames are not displayed so if there are no matches the only thing displayed is the count of template segments found.
+<p>
+You might take a look at packet-matcher-faster.sh. It matches on ip.id, tcp.seq and tcp.ack values. As long as the only thing that has changed in the IP addresses and or port numbers packet-matcher-faster is a better (faster) choice.
+
+<b><h3>Usage</h3></b>
+packet-matcher.sh TEMPLATE-FILE TARGET-FILE PORT-1 PORT-2 START END" 
+<br><br>
+<b>TEMPLATE-FILE</b>
+<br>
+The file name (or path to the file) of the template trace file
+<br><br>
+<b>TARGET-FILE</b>
+<br>
+is the name of the target trace file
+<br><br>
+<b>PORT-1</b>
+<br>
+One of the ports identifying the template stream
+<br><br>
+<b>PORT-2</b>
+<br>
+The other of the ports identifying the template stream
+<br><br>
+<b>START</b>
+<br>
+Starting byte in the TCP data (not the entire frame) of the template string
+<br><br>
+<b>END</b>
+<br>
+Ending byte in the TCP data of the template string
+<br><br>
+
+
+<b><h3>Examples</h3></b>
+
+Example 1 - Showing both unique and non-unique matches
+<p>
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>  
+$ ./packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 12 43
+packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 12 43
+
+20 template frames found
+
+Matching  Frames
+Template  Target  Stream
+101       36      2
+118       50      2
+156       89      2
+161       94      2
+162       95      2
+163       96      2
+165       98      2
+167       100     2
+
+8 matching frames
+
+non-unique  matches
+Template    Target
+120         51       61  145  204  469
+149         62       82  146  205  217  242  470  851
+
+
+If we check out the first matching pair we see its a client hello message. 
+
+$ tshark -r nat-example-3-inside.cap -Y "frame.number == 101"
+  101 8.513636069 192.168.1.200 → 216.58.193.206 SSL 3 0x9ec9 (40649) Client Hello
+
+$ tshark -r nat-example-3-outside.cap -Y "frame.number == 36"
+   36   1.245088 192.168.0.10 → 216.58.193.206 SSL 2 0x9ec9 (40649) Client Hello
+
+The Selected range 12 thru 43 is the random field in the SSL header. It is better to match on random data.
+
+$ tshark -r nat-example-3-inside.cap  -Y "frame.number == 101" -d tcp.port==443,echo -d tcp.port==48280,echo -T fields -e frame.numbe
+r -e echo.data | awk '{print $2}' | cut -c $((((12-1)*3)+1))-$(((43*3)-1))
+e7:da:aa:1e:e5:da:d5:31:7a:61:dd:c1:ee:98:bd:22:1f:56:fa:81:f9:9e:3b:bf:02:0f:91:c7:35:af:cb:94
+
+$ tshark -r nat-example-3-outside.cap  -Y "frame.number == 36" -d tcp.port==443,echo -d tcp.port==48280,echo -T fields -e frame.numbe
+r -e echo.data | awk '{print $2}' | cut -c $((((12-1)*3)+1))-$(((43*3)-1))
+e7:da:aa:1e:e5:da:d5:31:7a:61:dd:c1:ee:98:bd:22:1f:56:fa:81:f9:9e:3b:bf:02:0f:91:c7:35:af:cb:94
+
+If we look at one of the non-unique matches we see that most of the bytes appear to be ASCII characters
+
+$ tshark -r nat-example-3-inside.cap  -Y "frame.number == 120" -d tcp.port==443,echo -d tcp.port=
+=48280,echo -T fields -e frame.number -e echo.data | awk '{print $2}' | cut -c $((((12-1)*3)+1))-$(((43*3)-1))
+75:74:75:2e:62:65:82:0b:79:6f:75:74:75:62:65:2e:63:6f:6d:82:14:79:6f:75:74:75:62:65:65:64:75:63
+
+Converting to ASCII characters we see that most of the bytes are readable characters.
+
+$ for x in 51 61 145 204 469; do echo "$x: " $(tshark -r nat-example-3-outside.cap  -Y "frame.number == $x" -d tcp.port==443,echo -d 
+tcp.port==48280,echo -T fields -e frame.number -e echo.data | awk '{print $2}' | cut -c $((((12-1)*3)+1))-$(((43*3)-1)) | perl tshark
+-data-2-text.pl);  done | column -t
+51:   utu.be..youtube.com..youtubeeduc
+61:   utu.be..youtube.com..youtubeeduc
+145:  utu.be..youtube.com..youtubeeduc
+204:  utu.be..youtube.com..youtubeeduc
+469:  utu.be..youtube.com..youtubeeduc
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+
+Example 2 - If the string is not long enough or its position is poorly chosen you can send up with no unique matches
+<p>
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre> 
+$ ./packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 3 10
+packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 3 10
+
+20 template frames found
+
+
+non-unique  matches
+Template    Target
+101         36       45
+118         50       60  144  203  241  468  850
+120         51       61  145  204  469
+149         62       82  146  205  217  242  470  851
+156         78       80  89   115  116  150  195  209  225  247  475  856
+161         79       94  151  211  258  476  857
+162         86       95
+. . . . .
+
+We see that there are no unique matches. Looking at the first non-unique match we see that both matches are client hello packets but 
+from two different streams, TCP stream 2 and 3.
+
+$ tshark -r nat-example-3-inside.cap -Y "frame.number == 101"
+  101 8.513636069 192.168.1.200 → 216.58.193.206 SSL 3 0x9ec9 (40649) Client Hello
+
+$ tshark -r nat-example-3-outside.cap -Y "frame.number == 36"
+   36   1.245088 192.168.0.10 → 216.58.193.206 SSL 2 0x9ec9 (40649) Client Hello
+
+$ tshark -r nat-example-3-outside.cap -Y "frame.number == 45"
+   45   1.267948 192.168.0.10 → 216.58.193.206 SSL 3 0x6813 (26643) Client Hello
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-19</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

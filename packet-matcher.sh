@@ -2,19 +2,20 @@
 # packet-matcher.sh begins on the previous line
 #
 # This macro uses tshark to match segments from 1 TCP stream in a "template"
-# trace with segments in another, target, trace. If matches by extracting a 
+# trace with segments in another, target, trace. It matches by extracting a 
 # string of TCP data from a segment in the template stream and looking for a
 # frame that contains the same string in the target trace. So for every
-# segment in the template stream the target trace is seached once. This is
-# not a speedy process.
+# segment in the template stream the target trace is searched once. This is
+# not a speedy process. The strings do no have to be in the same relative
+# position in the template and target segments.
 #
 # The output is first a count of the number of segments found in the template
 # file followed by two tables. The first table is of uniquely matched segments
-# each row is the frame number from the tempate trace, the frame number from
+# each row is the frame number from the template trace, the frame number from
 # the target trace and the stream number that the target frame belongs to.
-# There is also a count of matches. The second table is of non-uniqe matches,
-# that is the template occured more than once in the target. Each row is the
-# template frame number followined by the list of matching target frames.
+# There is also a count of matches. The second table is of non-unique matches,
+# that is the template occurred more than once in the target. Each row is the
+# template frame number followed by the list of matching target frames.
 # Either of these tables may be skipped if they are empty. Non matching
 # template frames are not displayed so if there are no matches the only thing
 # displayed is the count of template segments found.
@@ -22,8 +23,10 @@
 # Version 1.0 March 18, 2017
 # Version 1.1 April 1 2017
 #    Added copyright and GNU GPL statement and disclaimer
+# Version 1.2 September 19, 2017
+#    Corrected some comments
 
-# PACKETMATCHERVERSION="1.1_2017-04-01"
+# PACKETMATCHERVERSION="1.2_2017-09_19"
 #
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -41,9 +44,9 @@
 if [ $# -ne 6 ]
    then echo "Usage:"
         echo "   packet-matcher.sh TEMPLATE-FILE TARGET-FILE PORT-1 PORT-2 START END"
-        echo "       TEMPLATE-FILE is the name of the template trace file"
+        echo "       TEMPLATE-FILE "
         echo "       TARGET-FILE is the name of the target trace file"
-        echo "       PORT-1 and PORT-2 are the ports identify the tempate stream"
+        echo "       PORT-1 and PORT-2 are the ports identify the template stream"
         echo "       START and END are the start and end of the TCP data that is"
         echo "          extracted from the template data and looked for in the target"
         echo "          START must be >= 1."

@@ -36,6 +36,7 @@ packet-matcher.sh		Extracts byte strings from a TCP stream in a
 				template trace and looks for the strings in a
 				target trace. The goal is to find a match TCP
 				stream in the target trace file
+packet-matcher.sh.html		An HTML description
 -------------------------------------------------------------------------------
 packet-matcher-faster.sh	Compares IP ID and absolute TCP sequence and
 				ACK numbers between two traces to match up
