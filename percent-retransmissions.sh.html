@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>percent-retransmissions.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>percent-retransmissions.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro uses tshark to calculate the percentage of retransmitted packets in a packet trace. Calculation is based on the source IP address and tshark stream number. The calculation is the number of retransmitted segments containing data from a given IP address in a given TCP stream divided by the number of not retransmitted segments containing data from that host in that stream.
+<p>
+
+Note that this will not count retransmitted SYN or FIN segments unless they contain data.
+<p>
+
+Output has the format
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stream Src-IP:Port Dst-IP:Port TTL retran / not-retran percentage
+<p>
+
+One line for each source stream/4-tuple. The TTL is to given so you some idea if the segments originated locally or remotely
+<p>
+
+If the only thing printed is the command and file name it means that the packet trace file did not contain any retransmitted segments containing data.
+<p>
+
+<b><h3>Usage</h3></b>
+percent-retransmissions.sh FILE 
+<br><br>
+<b>FILE</b>
+<br>
+The file name (or path to the file) to be analyized
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1 - One stream with retransmissions, sender local
+
+<p>
+All retransmissions in the stream are from 172.18.26.124 which is local to where the trace was collected (TTL is 64)
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./percent-retransmissions.sh retransmissions.pcap                                                                                  
+percent-retransmissions.sh retransmissions.pcap
+Stream: 0 172.18.26.124:42111 -> 172.30.198.87:12345 TTL: 64 259/61884*100 = 0.418525
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - One stream with retransmissions, sender remote 
+<p>
+All retransmissions in the stream are from 10.55.32.196 which is remote to where the trace was collected (TTL is 62)
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./percent-retransmissions.sh retransmissions-remote-sender.pcap                                                                    
+percent-retransmissions.sh retransmissions-remote-sender.pcap
+Stream: 0 10.55.32.196:65376 -> 10.55.12.129:22 TTL: 62 611/5924*100 = 10.314
+
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - multiple retransmissions in both directions in stream
+<p>
+Note streams 150 and 153 show retransmission in both directions. the TTL of 64 indicates that 172.16.114.120 is the local host and 192.168.169.76 is probably 10 hops away with an initial TTL of 255 and 192.168.165.10 is 4 hops away with an initial TTL of 64.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./percent-retransmissions.sh retransmissions-2.pcap                                                                                
+percent-retransmissions.sh retransmissions-2.pcap
+Stream: 10 172.16.114.120:48370 -> 192.168.140.10:5140 TTL: 64 5/608*100 = 0.822368
+Stream: 103 172.16.114.120:37610 -> 192.168.165.10:18444 TTL: 64 11/272*100 = 4.04412
+Stream: 109 172.16.114.120:37615 -> 192.168.165.10:18444 TTL: 64 10/278*100 = 3.59712
+Stream: 110 172.16.114.120:37616 -> 192.168.165.10:18444 TTL: 64 13/283*100 = 4.59364
+Stream: 116 192.168.169.76:8140 -> 172.16.114.120:42487 TTL: 245 1/52*100 = 1.92308
+Stream: 13 172.16.114.120:37551 -> 192.168.165.10:18444 TTL: 64 10/196*100 = 5.10204
+Stream: 135 172.16.114.120:58896 -> 172.18.119.175:8140 TTL: 64 1/6*100 = 16.6667
+Stream: 14 172.16.114.120:37546 -> 192.168.165.10:18444 TTL: 64 1/139*100 = 0.719424
+Stream: 150 172.16.114.120:42510 -> 192.168.169.76:8140 TTL: 64 9/29*100 = 31.0345
+Stream: 150 192.168.169.76:8140 -> 172.16.114.120:42510 TTL: 245 6/148*100 = 4.05405
+Stream: 15 172.16.114.120:37547 -> 192.168.165.10:18444 TTL: 64 2/97*100 = 2.06186
+Stream: 153 172.16.114.120:37647 -> 192.168.165.10:18444 TTL: 64 13/294*100 = 4.42177
+Stream: 153 192.168.165.10:18444 -> 172.16.114.120:37647 TTL: 60 1/103*100 = 0.970874
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Example 4 - No Retransmissions
+<p>
+The lack of any output except for the echo of the command line indicates that this packet trace does not exhibit any TCP layer retransmissions
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./percent-retransmissions.sh ssh_-i_enp0s25.pcap                                                                                   
+percent-retransmissions.sh ssh_-i_enp0s25.pcap
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-09-20</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

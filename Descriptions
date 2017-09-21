@@ -51,6 +51,7 @@ percent-retransmissions.sh	For every connection in the trace file
 				segments. segmenst must contain data, i.e.
 				will not identifiy retransmitted SYNs or FINs
 				without data.
+percent-retransmissions.sh.html An HTML description
 -------------------------------------------------------------------------------
 split-pcap.py                   Reads X.pcap and creates a set of
                                 X.pcap_IP1-Port1_IP2-Port2_split.pcap files,
