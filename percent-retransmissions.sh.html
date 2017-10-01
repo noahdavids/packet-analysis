@@ -40,6 +40,10 @@ percent-retransmissions.sh FILE
 The file name (or path to the file) to be analyized
 <br><br>
 
+<b><h3>When do retransmission become significant</h3></b>
+My experiments indicate that the point where retransmissions have a significant effect varies depending on if TCP Selective Acknowledgment is enabled or not. If enabled retransmissions can go as high as 0.2 to 0.5 percent. If not enabled its a magnitude lower. I built a shell script to test the effects of different rates of packet loss. Take a look at <a href="http://noahdavids.org/self_published/measure_retrans_effect.html">A shell script to measure the effects of retransmissions</a>
+<br><br>
+
 <b><h3>Examples</h3></b>
 
 Example 1 - One stream with retransmissions, sender local
@@ -129,7 +133,7 @@ Figure 4
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-09-20</h5>
+This page was last modified on 17-09-30</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
