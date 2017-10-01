@@ -77,8 +77,14 @@
 #  Added the server:port client:port columns to the output
 # Version 2.2 September 10, 2017
 #  Added CLR test
+# Version 2.3 October 1, 2017
+#  Added a check for the case where the server's 1 data packet is missing but
+#  but the client ACKs it so we know its a good. This was previsouly
+#  incorrectly flagged as SYN. Also the case where no server packets are
+#  captured but the client is ACKing data. This was previsouly incorrectly
+#  flagged as NOS.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.2_2017-09-10"
+FAILEDCONNECTIONATTEMPTSVERSION="2.3_2017-10-01"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -266,6 +272,38 @@ cat /tmp/failed-connection-attempts-1 | \
             continue
     fi
 
+# If we are here then either the server sent no segments or sent just an
+# ACK-SYN. It is possible that none of the server's segments were captured.
+# so look at the last segment sent by the client that doesn't have the SYN
+# flag set. If the last segment with the ACK flag set has an ACK value greater
+# than 1 then we know that the server sent something more than just a SYN, so
+# treat it as a good connection. I am limiting the search to the first 100
+# non-SYN segments from the client. Yes 100 is arbitrary but if the client has
+# sent 100 non-SYN segments without ACking anything from the server and the
+# server hasn't sent an ACK the stream probably need to be investigated
+# anyway.
+
+    grep -E "$stream $client $server $cport $sport" -m 100 \
+       /tmp/failed-connection-attempts-1 | awk '($9 == 0) {print  $0}'> \
+       /tmp/failed-connection-attempts-5
+
+# Last line with the ACK flags set
+
+    grep -E "$stream $client $server $cport $sport 1" \
+       /tmp/failed-connection-attempts-5 | tail -1 > \
+       /tmp/failed-connection-attempts-6
+
+# If the file has lines check that the ACK value is greater than 1, if so we 
+# have a good connection, just continue to the next stream. If not fall
+# through to the final tests.
+
+   if [ $(cat /tmp/failed-connection-attempts-6 | wc -l) -gt 0  ]
+      then if [ $(awk '{print $(NF-1)}' \
+              /tmp/failed-connection-attempts-6) -gt 1 ]
+              then continue
+           fi
+   fi
+
 # If we are here the connection attempt has failed, the only question is are
 # there any SYNs from the server or not and what did the client do.
 
@@ -282,19 +320,15 @@ cat /tmp/failed-connection-attempts-1 | \
     fi
 
 # A SYN from the server was found so now the question is did the client send
-# just SYNs and then a RESET (or an ACK and a RESET). First get the first 100
-# lines from the client to the server. I admit that 100 is arbitrary but for
-# this to make the wrong determination the client would have to have sent 98
-# SYNs, at the same time I do not want to copy what might be a lot of data.
-# Then remove the SYNs but stop after 2 matches this allows for an ACK
-# followed by a RESET or just a reset.
+# just SYNs and then a RESET (or an ACK and a RESET). We already have a file
+# with the first 100 not-SYNs from the client. So we check the first 2 lines,
+# if either contain a reset we flag this as client reset, else because the 
+# server did send a SYN we flag it as SYN.
 
-    grep -E "$stream $client $server $cport $sport" -m 100 \
-               /tmp/failed-connection-attempts-1 | \
-         grep -v -E "$stream $client $server $cport $sport . . . 1" -m 2 \
-                                          > /tmp/failed-connection-attempts-5
+    head -2 /tmp/failed-connection-attempts-5 > \
+           /tmp/failed-connection-attempts-6
 
-    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-5 | \
+    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-6 | \
          wc -l) -eq 1 ]
       then echo $stream $server:$sport $client:$cport \
                    "CLR" | tr "_" " " >> /tmp/failed-connection-attempts-3
