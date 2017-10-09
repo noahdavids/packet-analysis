@@ -16,8 +16,16 @@
 # Version 1.0 March 15, 2017
 # Version 1.1 April 01, 2017
 #    Added copyright and GNU GPL statement and disclaimer
+# Version 1.3 October 7, 2017
+#    Added a check to make sure that the found response has 1 query. If not
+#    just skip it. Had a trace with multiple responses and no queries. Also
+#    removed non-printing characters from the output. Queries had control
+#    characters and bytyes > 127 in the names and the causes column to barf.
+#    Finally check that the output line in /tmp/dns-time-1 has all 13 fields.
+#    Had some malformed queries that did not have all the fields and that
+#    screwed things up as well.
 
-DNSTMEVERSION="1.1_2017-04-01"
+DNSTMEVERSION="1.2_2017-10-08"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -64,12 +72,19 @@ fi
 # the epoch time and human readable time, the IP source and destination, the
 # transaction  ID, a flag for query (0) or response (1), the name being
 # queried, and the query type to /tmp/dns-time-1. Also filter out ICMP records
-# This removes ICMP destination unreachable and any other errors.
+# This removes ICMP destination unreachable and any other errors. Finally
+# filter the output to make sure it has only printable and white space
+# characters. This is needed because some dns.qry.name strings have
+# non-printing characters that that causes errors in some of the subsequent
+# commands. Also  make sure that there are 13 fields (frame.time will have 5
+# fields, month day, year, time, time-zone). If the DNS record is malformed we
+# can get a line without complete data which will also screw things up later on.
 
 tshark -r "$FILE" $DASH "not icmp && (udp.port == 53 || tcp.port == 53)" \
       -T fields -e frame.number -e frame.time_epoch -e frame.time \
       -e ip.src -e ip.dst -e dns.id -e dns.flags.response -e dns.qry.name \
-      -e dns.qry.type > /tmp/dns-time-1
+      -e dns.qry.type | tr -dc [:graph:][:space:] | \
+       awk '(NF == 13) {print $0}' > /tmp/dns-time-1
 
 # For every line in the dns-time-1 which is a response (column 11 (flags)
 # is 1 extract out the Server IP (column 8), client IP (column 9), transaction
@@ -91,7 +106,6 @@ awk '($11 == 1) {print $8 " " $9 " " $10 " " $12 " " $13}' /tmp/dns-time-1 | \
 # answers will be ignored. Note that for the response the order of the IP
 # addresses are reversed, i.e. server then client.
 
-       echo $server $id $type $name  $( \
        grep $client.*$server.*$id.*0.*$name.*$type /tmp/dns-time-1 | \
        awk '{print $2 " " $6}' | head -1 > /tmp/dns-time-2
        grep $server.*$client.*$id.*1.*$name.*$type /tmp/dns-time-1 | \
@@ -101,10 +115,13 @@ awk '($11 == 1) {print $8 " " $9 " " $10 " " $12 " " $13}' /tmp/dns-time-1 | \
 # is only 1 line then print out the human readable time of the response
 # column 4 "-" the human readable time of the query (column 2) " = "
 # the difference in the epoch times of response (column 3) and query
-# (column 1)
- 
-       cat /tmp/dns-time-2 | tr "\n" " " | \
-         awk '{print $4 " - " $2 " = " $3-$1}')
+# (column 1). If there aren't two lines just skip it.
+
+       if [ $(cat /tmp/dns-time-2 | wc -l) -eq 2 ] 
+          then echo $server $id $type $name \
+            $(cat /tmp/dns-time-2 | tr "\n" " " | \
+                    awk '{print $4 " - " $2 " = " $3-$1}')
+       fi
 
 # end of the while loop and everything goes into a third temporary file
 
