@@ -24,8 +24,10 @@
 #    Finally check that the output line in /tmp/dns-time-1 has all 13 fields.
 #    Had some malformed queries that did not have all the fields and that
 #    screwed things up as well.
+# Version 1.4 October 12, 2017
+#    Added support for IPv6 client and server addresses
 
-DNSTMEVERSION="1.2_2017-10-08"
+DNSTMEVERSION="1.2_2017-10-12"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -79,10 +81,13 @@ fi
 # commands. Also  make sure that there are 13 fields (frame.time will have 5
 # fields, month day, year, time, time-zone). If the DNS record is malformed we
 # can get a line without complete data which will also screw things up later on.
+# Note that I am selecting both IPv4 and IPv6 addresses only 1 type per frame
+# will print so it doesn't hurt anything to "print" both.
 
 tshark -r "$FILE" $DASH "not icmp && (udp.port == 53 || tcp.port == 53)" \
       -T fields -e frame.number -e frame.time_epoch -e frame.time \
-      -e ip.src -e ip.dst -e dns.id -e dns.flags.response -e dns.qry.name \
+      -e ip.src -e ipv6.src -e ip.dst -e ipv6.dst \
+      -e dns.id -e dns.flags.response -e dns.qry.name \
       -e dns.qry.type | tr -dc [:graph:][:space:] | \
        awk '(NF == 13) {print $0}' > /tmp/dns-time-1
 
