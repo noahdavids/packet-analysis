@@ -16,7 +16,7 @@ Create a table of DNS server query response times and list of unanswered queries
 
 failed-connection-attempts.sh
 =============================
-Find TCP connection attempts that have a failed. There ae 6 failure scenarios, See [failed-connection-attempts.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/failed-connection-attempts.sh.html).
+Find TCP connection attempts that have a failed. There are 6 failure scenarios, See [failed-connection-attempts.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/failed-connection-attempts.sh.html).
 
 find-ips.sh
 ===========
@@ -24,49 +24,49 @@ Uses egrep to list all strings in a file that match an IPv4 address format and t
 
 find-reset-connections.sh
 =========================
-find TCP connections that have been reset without being closed.
+Find TCP connections that have been reset without being closed. See [find-reset-connections.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find-reset-connections.sh.html).
 
 fix-pcap.sh
 ===========
-removes a partial packet at the end of a packet trace file.
+Removes a partial packet at the end of a packet trace file. See [fix-pcap.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/fix-pcap.sh.html).
 
 local-drops.sh
 ==============
-For each retransmitted TCP segment determine if the segment is seen more than once
-
-packet-matcher.sh
-=================
-Extracts byte strings from a TCP stream in a template trace and looks for the strings in a target trace. The goal is to find a match TCP stream in the target trace file
+For each retransmitted TCP segment determine if the segment is seen more than once. See [local-drops.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/local-drops.sh.html).
 
 packet-matcher-faster.sh
 ========================
-Compares IP ID and absolute TCP sequence and ACK numbers between two traces to match up TCP segments where the IP addresses and or TCP have been changed (i.e. NAT)
+Compares IP ID and absolute TCP sequence and ACK numbers between two traces to match up TCP segments where the IP addresses and or TCP have been changed (i.e. NAT). See [packet-matcher-faster.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/packet-matcher-faster.sh.html).
+
+packet-matcher.sh
+=================
+Extracts byte strings from a TCP stream in a template trace and looks for the strings in a target trace. The goal is to find a match TCP stream in the target trace file. See [packet-matcher.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/packet-matcher.sh.html).
 
 percent-retransmissions.sh
 ==========================
-For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segmenst must contain data, i.e.will not identifiy retransmitted SYNs or FINs without data.
+For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segments must contain data, i.e.will not identify retransmitted SYNs or FINs without data. See [percent-retransmissions.sh.html]((http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/percent-retransmissions.sh.html).
 
 split-pcap.py
 =============
-Reads X.pcap and creates a set of X.pcap_IP1-Port1_IP2-Port2_split.pcap files, one for each TCP four-tuple. Reads only pcap files not pcapng. Requires Python and the scapy module.
+Reads X.pcap and creates a set of X.pcap_IP1-Port1_IP2-Port2_split.pcap files, one for each TCP four-tuple. Reads only pcap files not pcapng. Requires Python and the scapy module. See [split-pcap.py.html]((http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/split-pcap.py.html).
 
 start-packet-tracing.sh
 =======================
-runs tcpdump in the background with 10 files of 100 Meg each. 
+Runs tcpdump in the background with 10 files of 100 Meg each. See [start-packet-tracing.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/start-packet-tracing.sh.html).
 
 stream-throughput.sh
 ====================
-calculate the throughput of all TCP streams in a trace file
+Calculate the throughput of all TCP streams in a trace file. See [stream-throughput.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/stream_throughput.sh.html).
 
 throughput-per-sec.sh
 =====================
-Calculate throughput per second of a specific stream at resolutions of 1, 1/10, 1/100, and 1/1000 of a second. results are suitable for graphing.
+Calculate throughput per second of a specific stream at resolutions of 1, 1/10, 1/100, and 1/1000 of a second. results are suitable for graphing. See [throughput-per-sec.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/throughput-per-sec.sh.html).
 
 time-summary.sh
 ===============
-finds all files in the current directory and any sub directories and displays then start and end times in sorted order.
+Finds all files in the current directory and any sub directories and displays then start and end times in sorted order. See [time-summary.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/time-summary.sh.html).
 
 unterminated-connections.sh
 ===========================
-find TCP connections that have not been closed or reset
+Find TCP connections that have not been closed or reset. See [unterminated-connections.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/unterminated-connections.sh.html).
 
