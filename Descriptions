@@ -68,6 +68,17 @@ stream-throughput.sh		calculate the throughput of all TCP streams
                                 in a trace file
 stream-throughput.sh.html	An HTML description
 -------------------------------------------------------------------------------
+throughput-per-sec.sh		Calculate throughput per second of a specific
+				stream at resolutions of 1, 1/10, 1/100, and
+				1/1000 of a second. results are suitable for
+				graphing.
+throughput-per-sec.sh.html	An HTML description
+throughput-per-sec-a.png	image used by throughput-per-sec.sh.html
+throughput-per-sec-b.png	image used by throughput-per-sec.sh.html
+throughput-per-sec-c.png	image used by throughput-per-sec.sh.html
+throughput-per-sec-d.png	image used by throughput-per-sec.sh.html
+throughput-per-sec-e.png	image used by throughput-per-sec.sh.html
+-------------------------------------------------------------------------------
 time-summary.sh			finds all files in the current directory and
                                 any sub directories and displays then start
                                 and end times in sorted order.
