@@ -44,11 +44,11 @@ Extracts byte strings from a TCP stream in a template trace and looks for the st
 
 percent-retransmissions.sh
 ==========================
-For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segments must contain data, i.e.will not identify retransmitted SYNs or FINs without data. See [percent-retransmissions.sh.html]((http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/percent-retransmissions.sh.html).
+For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segments must contain data, i.e.will not identify retransmitted SYNs or FINs without data. See [percent-retransmissions.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/percent-retransmissions.sh.html).
 
 split-pcap.py
 =============
-Reads X.pcap and creates a set of X.pcap_IP1-Port1_IP2-Port2_split.pcap files, one for each TCP four-tuple. Reads only pcap files not pcapng. Requires Python and the scapy module. See [split-pcap.py.html]((http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/split-pcap.py.html).
+Reads X.pcap and creates a set of X.pcap_IP1-Port1_IP2-Port2_split.pcap files, one for each TCP four-tuple. Reads only pcap files not pcapng. Requires Python and the scapy module. See [split-pcap.py.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/split-pcap.py.html).
 
 start-packet-tracing.sh
 =======================
