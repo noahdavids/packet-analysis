@@ -1,21 +1,26 @@
 average.sh
 ==========
-Average a value returned by tshark. See [average.sh.html](https://github.com/noahdavids/packet-analysis/blob/master/average.sh.html/).
+Average a value returned by tshark. See [average.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/average.sh.html/).
+
+build-filter.sh
+===============
+Builds a tshark filter by ANDing or ORing the values in a list with a tshark variable. See [build-filter.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/build-filter.sh.html).
 
 bytes-in-flight.sh
 ==================
-Calcuate the bytes in flight after each ACK. See [bytes-in-flight.sh.html](https://github.com/noahdavids/packet-analysis/blob/master/bytes-in-flight.sh.html/).
+Calcuate the bytes in flight after each ACK. See [bytes-in-flight.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/bytes-in-flight.sh.html/).
 
 dns-time.sh
-Create a table of DNS server query response times and list of unanswered queries. See [bytes-in-flight.sh.html](https://github.com/noahdavids/packet-analysis/blob/master/dns-time.sh.html/).
+===========
+Create a table of DNS server query response times and list of unanswered queries. See [bytes-in-flight.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/dns-time.sh.html/).
 
 failed-connection-attempts.sh
 =============================
-find TCP connection attempts that have a failed. There ae 6 failure scenarios, see the comments for a description.
+Find TCP connection attempts that have a failed. There ae 6 failure scenarios, See [failed-connection-attempts.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/failed-connection-attempts.sh.html/).
 
 find-ips.sh
 ===========
-uses egrep to list all strings in a file that match an IPv4 address format and the sort -u to get a unique list. Really just a one-liner by this way I do not have to remember (or type) the egrep string.
+Uses egrep to list all strings in a file that match an IPv4 address format and the sort -u to get a unique list. Really just a one-liner by this way I do not have to remember (or type) the egrep string. Its useful with build-filter.sh to create a filter to display all the IPs listed in say a log file. See [find-ips.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find-ips.sh.html/).
 
 find-reset-connections.sh
 =========================
