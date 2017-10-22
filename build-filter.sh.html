@@ -1,0 +1,106 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>build-filter.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>build-filter.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro reads a list from a file and builds a tshark filter comparing each item in the list to a tshark variable which is input as an argument. The items are then either ANDed or ORed as specified by a second argument.
+
+<b><h3>Usage</h3></b>
+build-filter.sh FILE TSHARK-VARIABLE and|or
+<br><br>
+<b>FILE</b>
+<br>
+The file name (or path to the file)
+<br><br>
+<b>TSHARK-VARIABLE</b>
+<br>
+This can be any string that is suitable for a tshark filter
+<br><br>
+<b>and|or</b>
+<br>
+Either the string "and" or the string "or"
+<br><br>
+
+<b><h3>Examples</h3></b>
+Example 1 - OR example from a file
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+# cat foo
+192.168.20.1
+10.1.1.200
+172.16.1.200
+192.168.1.200
+192.168.122.1
+
+# build-filter.sh foo ip.addr or
+ ip.addr == 192.168.20.1 || ip.addr == 10.1.1.200 || ip.addr == 172.16.1.200 || ip.addr == 192.168.1.200 || ip.addr == 192.168.122.1 
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - using "-" as the file to read from standard in
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+# cat /var/log/secure* | grep "Connection from 192.168.1.5" | awk '{print $10}' | build-filter.sh - tcp.port or                      
+ tcp.port == 43344 || tcp.port == 43348 || tcp.port == 45866 || tcp.port == 49002 || tcp.port == 52910 || tcp.port == 41822
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+
+Example 3 - Using find-ips.sh to extract IP addresses from log files and build a filter based on the IP addresses
+<br>
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+# cat secure* | find-ips.sh - | grep -v 127.0.0.1 | grep -v 0.0.0.0 | build-filter.sh - ip.addr or
+ ip.addr == 10.1.1.200 || ip.addr == 172.16.1.11 || ip.addr == 172.16.1.200 || ip.addr == 172.16.1.207 || ip.addr == 192.168.1.10 || 
+ip.addr == 192.168.1.12 || ip.addr == 192.168.1.150 || ip.addr == 192.168.1.154 || ip.addr == 192.168.1.156 || ip.addr == 192.168.1.2
+00 || ip.addr == 192.168.1.207 || ip.addr == 192.168.122.1 || ip.addr == 192.168.122.136 || ip.addr == 192.168.122.25 || ip.addr == 1
+92.168.122.41 || ip.addr == 192.168.1.49 || ip.addr == 192.168.1.5 || ip.addr == 192.168.1.7 || ip.addr == 192.168.1.9 || ip.addr == 
+192.168.20.1
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 17-10-22</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

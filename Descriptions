@@ -1,6 +1,10 @@
 average.sh			average a value returned by tshark
 average.sh.html			An HTML description
 -------------------------------------------------------------------------------
+build-filter.sh			Builds a tshark filter by ANDing or ORing the
+				values in a list with a tshark variable
+build-filter.sh.html		An HTML description
+-------------------------------------------------------------------------------
 bytes-in-flight.sh		calcuate the bytes in flight after each ACK
 bytes-in-flight.sh.html		An HTML description
 -------------------------------------------------------------------------------
