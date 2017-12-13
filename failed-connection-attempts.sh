@@ -12,11 +12,19 @@
 #	      data
 #	CHA - first response from the server is a CHAllenge ACK
 #	IMC - server just accepts and then IMmediately Closes the connection
-#             with a FIN
+#             with a FIN. Note there are two versions of this IMC if the
+#             determination is made by looking at the Server's segments and
+#             imc (lower case) if the determination is made by looking at the
+#             client's segments.
 #	SYN - the only response from the server is an ACK-SYN
 #	NOS - there are NO tcp Segments from the server
 #       CLR - The server responds with an ACK-SYN but then the CLient sends
 #             a Reset or an ACK and then a reset
+#       CIC - Client Immediatelty Closes the connection with a FIN after
+#             the Server's ACK-SYN
+#       MAR - short for martian, if we get to this point there is a hole
+#             in the algorithm since its not determined to be a good
+#             connection and its not one of the above failures
 
 # The presence or absense of an ACK-SYN is not enough to determine if a 
 # connect attempt succeeded or not. It is possible that the ACK-SYN is not
@@ -28,26 +36,6 @@
 # destination unreachable or a reset the SYN may not be retransmitted. 
 # Also if the server responds with a challenge ACK instead of a ACK-SYN the
 # client can send its own reset.
-
-# A connection attempt is considered as succeded if the client sends a SYN and
-# the server sends a segment with the PSH flag set since that means that the
-# server has sent data. Also if the ACK number of the first ACK segment sent
-# by the server with no other TCP flags set is < 65535. That is an arbitrary
-# cut off but large enough that several segments could be dropped without
-# changing the conclusion and small enough that the probability that it is a
-# challenge ACK is small (0.000015259 (65535 / 4294967295)). Also if the
-# server sends a FIN with an ACK number > 1 it means that it has ACKed
-# something besides the SYN, note that this might be the FIN from the client
-# but either way it is considered a succeeded connection. On the other hand if
-# the server accepts the connection and then immediatelty sends a FIN the
-# conection attempt is considered as failed. Technically this is not a failed
-# TCP connection attempt but since the client application most likely reported
-# an error it gets added to the list of failed connection attempts. There is 
-# also the case of the server sending a ACK-SYN and the client sending an ACK
-# followed by a RESET. technically this is also a completed connection but
-# most likely the server will report an error so it is flagged as CLR. the case
-# of the client responding to the ACK-SYN with a reset is clearly a failed
-# connection (no ACK from the client) and is also flagged as CLR.
 
 # You can monitor the progress of the script by looking at
 # /tmp/failed-connection-attempts-4. As each stream number with a SYN is
@@ -83,8 +71,11 @@
 #  incorrectly flagged as SYN. Also the case where no server packets are
 #  captured but the client is ACKing data. This was previsouly incorrectly
 #  flagged as NOS.
+# Version 2.4 Decemeber 12, 2017
+#  Added the CIC and MAR flags, also reworked algorthim to hopefully make
+#  it faster.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.3_2017-10-01"
+FAILEDCONNECTIONATTEMPTSVERSION="2.4_2017-12-12"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -137,9 +128,10 @@ fi
 
 # Call tshark writing the TCP stream number, source and destination IP
 # addresses and ports, all the flags the ACK number and the TCP length.
-# Enclose the stream value in "_" characters so that so when we match
-# on stream 10 we do not also select streams 110, 210, 310, etc. Write
-# everything out to the temporary file /tmp/fail-connection-attempts-1.
+# and sequence number. Enclose the stream value in "_" characters so that
+# so when we match on stream 10 we do not also select streams 110, 210,
+# 310, etc. Write everything out to the temporary file
+# /tmp/fail-connection-attempts-1.
 #
 # The not icmp is to make sure we aren't confused by an ICMP response
 # from the server. 
@@ -149,19 +141,19 @@ if [ $# -eq 2 ]
      tshark -r "$FILE" $DASH "tcp && not icmp && ($2)" -T fields \
        -e tcp.stream -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport \
        -e tcp.flags.ack -e tcp.flags.push -e tcp.flags.reset \
-       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len \
+       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len -e tcp.seq \
        -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
        awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5 " " $6 " " $7 " " $8 \
-             " " $9 " " $10 " " $11 " " $12}' \
+             " " $9 " " $10 " " $11 " " $12 " " $13}' \
                         > /tmp/failed-connection-attempts-1
 else
      tshark -r "$FILE" $DASH "tcp && not icmp" -T fields \
        -e tcp.stream -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport \
        -e tcp.flags.ack -e tcp.flags.push -e tcp.flags.reset \
-       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len \
+       -e tcp.flags.syn -e tcp.flags.fin -e tcp.ack -e tcp.len -e tcp.seq \
        -o tcp.relative_sequence_numbers:TRUE 2>/dev/null | \
        awk '{print "_" $1 "_ " $2 " " $3 " " $4 " " $5 " " $6 " " $7 " " $8 \
-             " " $9 " " $10 " " $11 " " $12}' \
+             " " $9 " " $10 " " $11 " " $12 " " $13}' \
                         > /tmp/failed-connection-attempts-1
 
 fi
@@ -190,7 +182,7 @@ echo -n "" > /tmp/failed-connection-attempts-4
 
 cat /tmp/failed-connection-attempts-1 | \
   while read stream client server cport sport ack push reset \
-             syn fin ackno tcplen
+             syn fin ackno tcplen seqno
   do
     if  [ "$ack" == 0 -a "$syn" == 1 ]
         then echo $stream >> /dev/null
@@ -208,133 +200,161 @@ cat /tmp/failed-connection-attempts-1 | \
     echo $CURRENTSTREAM > /tmp/failed-connection-attempts-4
     LASTSTREAM=$CURRENTSTREAM
 
-# find the first segment from the server to the client for this stream that
-# does not have the SYN flag set
+# Find the first 200 segments for that stream and then separate into server
+# sourced and client sourced segments. Yes, 200 is an arbitrary number but if
+# we cannot figure out it out after 200 segments we have a bigger problem and
+# yes 200 is probably over kill but I wanted to be sure.
 
-    grep -E "$stream $server $client $sport $cport . . . 0" -m 1 \
-       /tmp/failed-connection-attempts-1 > /tmp/failed-connection-attempts-2
+    grep -E "$stream" -m 200 /tmp/failed-connection-attempts-1 > \
+       /tmp/failed-connection-attempts-1a
 
-# PUSH flag is set, good connection
-    if [ $(awk '($7 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
-         wc -l) -gt 0 ]
-       then continue
-    fi
+    grep -E "$stream $server $client $sport $cport" \
+       /tmp/failed-connection-attempts-1a > /tmp/failed-connection-attempts-2s
 
-# ACK flag is set and the RST, SYN and FIN flags are not set and the ACK 
-# number > 65535, it is probably (99.9984741% (1-65535÷4294967295)) a
-# challenge ACK so mark it as failed
+    grep -E "$stream $client $server $cport $sport" \
+       /tmp/failed-connection-attempts-1a > /tmp/failed-connection-attempts-2c
+
+
+# If there are server sourced segments
+
+    if [ $(cat /tmp/failed-connection-attempts-2s | wc -l) -gt 0 ]
+       then 
+
+# If the only Server segments are ACK-SYNs or just ACKs with an ACK of 1
+# and no data is sent it is either a SYN or CLR scenario. Check the
+# client side, if there is a reset with a sequence number of 1 its a CLR
+# else its a SYN
+
+         if [ $(awk '(!(($6 == 1 && $9 == 1) || ($6 == 1 && $11 == 1) || \
+            ($12 > 0))) {print $0}' /tmp/failed-connection-attempts-2s | \
+            wc -l) -eq 0 ]
+            then if [ $(awk '(($8 == 1) && ($13 == 1)) {print $0}' \
+                    /tmp/failed-connection-attempts-2c| wc -l) -gt 0 ]
+                    then echo $stream $server:$sport $client:$cport "CLR" | \
+                       tr "_" " " >> /tmp/failed-connection-attempts-3
+                    else  echo $stream $server:$sport $client:$cport "SYN" | \
+                       tr "_" " " >> /tmp/failed-connection-attempts-3
+                 fi
+                 continue
+         fi
+
+# If the first segment has the ACK flag is set and the RST, SYN and FIN
+# flags are not set and the ACK number > 65535, it is probably
+# (99.9984741% (1-65535÷4294967295)) a challenge ACK so mark it as failed
   
-    if [ $(awk '($6 == 1 && $8 == 0 && $9 == 0 && $10 == 0 && \
+         if [ $(head -1 /tmp/failed-connection-attempts-2s | \
+            awk '($6 == 1 && $8 == 0 && $9 == 0 && $10 == 0 && \
                                               $11 > 65535) {print $0}' \
-                     /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then echo $stream $server:$sport $client:$cport "CHA" | tr "_" " " \
-                                   >> /tmp/failed-connection-attempts-3
-            continue
-    fi
+            | wc -l) -gt 0 ]
+            then echo $stream $server:$sport $client:$cport "CHA" | \
+                     tr "_" " " >> /tmp/failed-connection-attempts-3
+                 continue
+         fi
 
-# ACK flag is set and the RST, SYN and FIN flags are not set and the ACK 
-# number < 65535, it is probably not a challenge ACK so assume its good and
-# skip the to the next stream. Note that is NOT the else from the previous
-# "if" since it still requires that the ACK flag be set.
+# If we have a server segment with either the PUSH flag set or data,
+# or it is ACKing data from client (something more than a FIN) treat it
+# as a good connection
 
-    if [ $(awk '($6 == 1 && $8 == 0 && $9 == 0 && $10 == 0 && \
-                                              $11 < 65535) {print $0}' \
-                     /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then continue
-    fi
+         if [ $(awk '(($7 == 1) || ($11 > 2) || ($12 > 0)) {print $0}' \
+            /tmp/failed-connection-attempts-2s | wc -l) -gt 0 ]
+            then continue
+         fi
+
+
+# At this point we only care about the first non-SYN packet from the server
+
+         grep -E "$stream $server $client $sport $cport . . . 0" -m 1 \
+             /tmp/failed-connection-attempts-1a > \
+             /tmp/failed-connection-attempts-2s
+
 
 # FIN flag is set and the ACK number == 1 so server closed the connection
-# without accepting any data. It is possible that the client opened a
-# connection then the server sent 1 segment of data and closed the connection
-# but the TCP length is also 0 so make this as failed
+# without accepting any data so make this as failed
 
-    if [ $(awk '($10 == 1 && $11 == 1 && $12 == 0) {print $0}' \
-                     /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then echo $stream $server:$sport $client:$cport "IMC" | tr "_" " " \
-                                   >> /tmp/failed-connection-attempts-3
+         if [ $(awk '($10 == 1 && $11 == 1 && $12 == 0) {print $0}' \
+                     /tmp/failed-connection-attempts-2s | wc -l) -gt 0 ]
+            then echo $stream $server:$sport $client:$cport "IMC" | \
+                     tr "_" " " >> /tmp/failed-connection-attempts-3
             continue
-    fi
+         fi
 
-# If the FIN flag is set and we are here it means that the ACK number is
-# greater than 1 or there is TCP data either way we are good
+# RESET flag is set, mark it as failed, rember this is the first segment from
+# from the server that does not have the SYN flag set.
 
-    if [ $(awk '($10 == 1) {print $0}' \
-                     /tmp/failed-connection-attempts-2 | wc -l) -gt 0 ]
-       then continue
-    fi
-
-# RESET flag is set, mark it as failed
-
-    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
-         wc -l) -gt 0 ]
-       then echo $stream $server:$sport $client:$cport "RST" | tr "_" " " \
+         if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-2s | \
+               wc -l) -gt 0 ]
+            then echo $stream $server:$sport $client:$cport "RST" | tr "_" " " \
                                    >> /tmp/failed-connection-attempts-3
-            continue
+                 continue
+         fi
     fi
 
-# If we are here then either the server sent no segments or sent just an
-# ACK-SYN. It is possible that none of the server's segments were captured.
-# so look at the last segment sent by the client that doesn't have the SYN
-# flag set. If the last segment with the ACK flag set has an ACK value greater
-# than 1 then we know that the server sent something more than just a SYN, so
-# treat it as a good connection. I am limiting the search to the first 100
-# non-SYN segments from the client. Yes 100 is arbitrary but if the client has
-# sent 100 non-SYN segments without ACking anything from the server and the
-# server hasn't sent an ACK the stream probably need to be investigated
-# anyway.
+# If we are here then either the server sent no segments or all the above 
+# tests failed. Lets look at the client's packets
 
-    grep -E "$stream $client $server $cport $sport" -m 100 \
-       /tmp/failed-connection-attempts-1 | awk '($9 == 0) {print  $0}'> \
-       /tmp/failed-connection-attempts-5
+# Client did send something besides a SYN, could be a FIN, reset, or data or
+# ACK of data
 
-# Last line with the ACK flags set
+   if [ $(cat /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
+      then
 
-    grep -E "$stream $client $server $cport $sport 1" \
-       /tmp/failed-connection-attempts-5 | tail -1 > \
-       /tmp/failed-connection-attempts-6
+# If there are any segments (from client) with an ACK > 2 or with TCP data
+# we have a good connection
 
-# If the file has lines check that the ACK value is greater than 1, if so we 
-# have a good connection, just continue to the next stream. If not fall
-# through to the final tests.
+         if [ $(awk '($11 > 2 || $12 > 0) {print $0}' \
+             /tmp/failed-connection-attempts-2c  | wc -l) -gt 0 ]
+            then continue
+         fi
 
-   if [ $(cat /tmp/failed-connection-attempts-6 | wc -l) -gt 0  ]
-      then if [ $(awk '{print $(NF-1)}' \
-              /tmp/failed-connection-attempts-6) -gt 1 ]
-              then continue
-           fi
+# Did the client send a FIN with an ACK of 1 indicating that it closed
+# the connection immediately
+
+          if [ $(awk '($10 == 1 && $11 == 1) {print $0}' \
+             /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
+             then echo $stream $server:$sport $client:$cport \
+                  "CIC" | tr "_" " " >> /tmp/failed-connection-attempts-3
+             continue
+          fi
+
+# Did the client send a FIN with an ACK of 2 indicating that it closed
+# the connection in response to an immediate FIN from the server. Keep
+# in mind that we are only here if the client never sent and data so
+# the only reason for a FIN with an ACK of 2 is that neither side sent
+# any data and the server sent an immediate FIN. We should have spotted
+# this already but only if the server didn't send an ACK before the FIN.
+# I flaf this with a lower case IMC so I can tell the difference.
+
+          if [ $(awk '($10 == 1 && $11 == 2) {print $0}' \
+             /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
+             then echo $stream $server:$sport $client:$cport \
+                  "imc" | tr "_" " " >> /tmp/failed-connection-attempts-3
+             continue
+          fi
+
+# Did the client send a reset and did not send data or ACK data (covered
+# in a previous test)
+
+          if [ $(awk '($8 == 1) {print $0}' \
+             /tmp/failed-connection-attempts-2c  | wc -l) -gt 0 ]
+             then echo $stream $server:$sport $client:$cport \
+                  "CLR" | tr "_" " " >> /tmp/failed-connection-attempts-3
+             continue
+          fi
    fi
 
-# If we are here the connection attempt has failed, the only question is are
-# there any SYNs from the server or not and what did the client do.
+# If we are here either the trace file has no segments (of any type from
+# the server or all of the above tests failed. Double check there are
+# no segments from the server. Assuming there are none flag the connection
+# as NOS. If there are flag it as MAR since we should be there.
 
-    grep -E "$stream $server $client $sport $cport . . . 1" -m 1 \
-       /tmp/failed-connection-attempts-1 > /tmp/failed-connection-attempts-2
-
-# The server did not sent a SYN so flag the connection as NOS
-
-    if [ $(awk '($9 == 1) {print $0}' /tmp/failed-connection-attempts-2 | \
-         wc -l) -eq 0 ]
-       then echo $stream $server:$sport $client:$cport "NOS" | tr "_" " " \
-                                   >> /tmp/failed-connection-attempts-3
-            continue
-    fi
-
-# A SYN from the server was found so now the question is did the client send
-# just SYNs and then a RESET (or an ACK and a RESET). We already have a file
-# with the first 100 not-SYNs from the client. So we check the first 2 lines,
-# if either contain a reset we flag this as client reset, else because the 
-# server did send a SYN we flag it as SYN.
-
-    head -2 /tmp/failed-connection-attempts-5 > \
-           /tmp/failed-connection-attempts-6
-
-    if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-6 | \
-         wc -l) -eq 1 ]
+   if [ $(grep -E "$stream $server $client $sport $cport" \
+       /tmp/failed-connection-attempts-1a | wc -l) -eq 0 ]
       then echo $stream $server:$sport $client:$cport \
-                   "CLR" | tr "_" " " >> /tmp/failed-connection-attempts-3
+                  "NOS" | tr "_" " " >> /tmp/failed-connection-attempts-3
       else echo $stream $server:$sport $client:$cport \
-                   "SYN" | tr "_" " " >> /tmp/failed-connection-attempts-3
-    fi
+                  "MAR" | tr "_" " " >> /tmp/failed-connection-attempts-3
+   fi
+
   done
 
 
