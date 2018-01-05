@@ -74,8 +74,16 @@
 # Version 2.4 Decemeber 12, 2017
 #  Added the CIC and MAR flags, also reworked algorthim to hopefully make
 #  it faster.
+# Version 2.5 January 4, 2018
+#  Added a check right at the start for a client segment with seq and ack 
+#  numbers > 2 and  the reset flag == 0. This indicates a good connection.
+#  Should speed up processing and also correctly identify the case where
+#  where the only captured server side segment is the SYN-ACK but the client
+#  is ACKing segments that the trace does not see. It also catches the case
+#  where the first server response is a challenge ACK but the client tries
+#  again instead of sending a reset and the connection completes.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.4_2017-12-12"
+FAILEDCONNECTIONATTEMPTSVERSION="2.5_2018-01-04"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -214,6 +222,13 @@ cat /tmp/failed-connection-attempts-1 | \
     grep -E "$stream $client $server $cport $sport" \
        /tmp/failed-connection-attempts-1a > /tmp/failed-connection-attempts-2c
 
+# If a client side segment has sequence and ACK numbers > 2 and the reset
+# flag is not set we know this is a good connection so just continue
+
+    if [ $(awk '($11 > 2 && $13 > 2 && $8 == 0) {print $0}' \
+       /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
+       then continue
+    fi
 
 # If there are server sourced segments
 
