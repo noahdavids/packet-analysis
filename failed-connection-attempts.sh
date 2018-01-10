@@ -82,8 +82,11 @@
 #  is ACKing segments that the trace does not see. It also catches the case
 #  where the first server response is a challenge ACK but the client tries
 #  again instead of sending a reset and the connection completes.
+# Version 2.6 January 10, 2016
+#  Changed that first client segment check to check is ACK and SEQ > 2 and
+#  the ACK flag is set, I droped the reset flag must not be set.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.5_2018-01-04"
+FAILEDCONNECTIONATTEMPTSVERSION="2.6_2018-01-10"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -222,10 +225,10 @@ cat /tmp/failed-connection-attempts-1 | \
     grep -E "$stream $client $server $cport $sport" \
        /tmp/failed-connection-attempts-1a > /tmp/failed-connection-attempts-2c
 
-# If a client side segment has sequence and ACK numbers > 2 and the reset
-# flag is not set we know this is a good connection so just continue
+# If a client side segment has sequence and ACK numbers > 2 and the ACK
+# flag is set we know this is a good connection so just continue
 
-    if [ $(awk '($11 > 2 && $13 > 2 && $8 == 0) {print $0}' \
+    if [ $(awk '($11 > 2 && $13 > 2 && $6 == 1) {print $0}' \
        /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
        then continue
     fi
