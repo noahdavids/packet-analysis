@@ -85,8 +85,12 @@
 # Version 2.6 January 10, 2016
 #  Changed that first client segment check to check is ACK and SEQ > 2 and
 #  the ACK flag is set, I droped the reset flag must not be set.
+# Version 2.7 February 6, 2018
+#  Fixed false positive where client and server both send data but do not ACK
+#  the data -- there may be an issue with the connection BUT the connection
+#  attemp succeeded OK.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.6_2018-01-10"
+FAILEDCONNECTIONATTEMPTSVERSION="2.7_2018-02-06"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -241,10 +245,11 @@ cat /tmp/failed-connection-attempts-1 | \
 # If the only Server segments are ACK-SYNs or just ACKs with an ACK of 1
 # and no data is sent it is either a SYN or CLR scenario. Check the
 # client side, if there is a reset with a sequence number of 1 its a CLR
-# else its a SYN
+# else its a SYN. Note if th eserver sent data $12 > 0 it thinks there is
+# a good connection so we do too.
 
-         if [ $(awk '(!(($6 == 1 && $9 == 1) || ($6 == 1 && $11 == 1) || \
-            ($12 > 0))) {print $0}' /tmp/failed-connection-attempts-2s | \
+         if [ $(awk '(!(($6 == 1 && $9 == 1) || ($6 == 1 && $11 == 1)) || \
+            ($12 > 0)) {print $0}' /tmp/failed-connection-attempts-2s | \
             wc -l) -eq 0 ]
             then if [ $(awk '(($8 == 1) && ($13 == 1)) {print $0}' \
                     /tmp/failed-connection-attempts-2c| wc -l) -gt 0 ]
