@@ -17,9 +17,9 @@
 <p>
 This macro uses tshark to find DNS (port 53) queries and calculate the time between query and response. It differs from the dns.time value calculated by wireshark in that it calculates the time between the first response for transaction ID X and the first query for transaction X not the first response and last query for transaction X.
 <p>
-The output is a a table with the following columns.
+The output is a table with the following columns.
 <br>
-&nbsp&nbsp&nbsp&nbspServer ID Type Name Response-time - Query-time = Delta-time
+&nbsp&nbsp&nbsp&nbspServer ID Type Name Rcode Response-time - Query-time = Delta-time
 <br>
 Where:
 <ul>
@@ -36,7 +36,15 @@ Where:
 </ul>
 </li>
 <li>Name
-<br>&nbsp&nbsp&nbsp&nbsp&nbspName being queries</li>
+<br>&nbsp&nbsp&nbsp&nbsp&nbspName being queried</li>
+<li>Rcode
+<br>&nbsp&nbsp&nbsp&nbsp&nbspThe response return code. The common ones are
+<ul>
+<li>0&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNo error</li>
+<li>2&nbsp&nbsp&nbsp&nbsp&nbsp&nbspServer failure</li>
+<li>3&nbsp&nbsp&nbsp&nbsp&nbsp&nbspNo such name</li>
+</ul>
+</li>
 <li>Response-time
 <br>&nbsp&nbsp&nbsp&nbsp&nbspPacket arrival time of the first response</li>
 <li>Query-time
@@ -64,30 +72,30 @@ Example 1 - Execute dns-time.sh
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
-$ ./dns-time.sh /cloud/seagate/packet-trace-library/dns-2.pcap 
+$ ./dns-time.sh dns-2.pcap 
 dns-time.sh /cloud/seagate/packet-trace-library/dns-2.pcap
-Server       ID          Type  Name                          Response-time       -  Query-time          =  Delta-time
-192.168.1.1  0x00000938  1     subscription.rhsm.redhat.com  16:47:18.954770787  -  16:47:18.954321824  =  0.000448942
-192.168.1.1  0x000011b9  1     d.dropbox.com                 16:46:18.311503201  -  16:46:18.232357317  =  0.0791459
-192.168.1.1  0x00001302  1     subscription.rhsm.redhat.com  16:47:17.950767160  -  16:47:17.950227048  =  0.000540257
-192.168.1.1  0x000013ae  1     subscription.rhsm.redhat.com  16:46:17.938781144  -  16:46:17.938380590  =  0.000400782
-192.168.1.1  0x00001418  12    196.193.58.216.in-addr.arpa   16:47:04.081949744  -  16:47:03.401008730  =  0.680941
-192.168.1.1  0x00003b25  1     subscription.rhsm.redhat.com  16:47:18.676233199  -  16:47:18.675692420  =  0.000540972
-192.168.1.1  0x00004b96  28    subscription.rhsm.redhat.com  16:47:18.953927717  -  16:47:18.952111412  =  0.00181627
-192.168.1.1  0x000061e3  1     client.dropbox.com            16:46:17.820613668  -  16:46:17.558599440  =  0.262014
-192.168.1.1  0x000063c4  1     subscription.rhsm.redhat.com  16:47:18.678505569  -  16:47:18.678054622  =  0.000451088
-192.168.1.1  0x0000658b  1     log.getdropbox.com            16:46:18.220943881  -  16:46:17.842960949  =  0.377983
-192.168.1.1  0x000077f8  1     www.google.com                16:46:00.577802806  -  16:46:00.577284082  =  0.000518799
-192.168.1.1  0x00007bb8  28    subscription.rhsm.redhat.com  16:46:17.937824958  -  16:46:17.935915704  =  0.00190926
-192.168.1.1  0x0000836f  28    subscription.rhsm.redhat.com  16:47:17.952087425  -  16:47:17.950249823  =  0.00183749
-192.168.1.1  0x00009177  28    log.getdropbox.com            16:46:18.219846662  -  16:46:17.842980113  =  0.376867
-192.168.1.1  0x000095a7  1     client.dropbox.com            16:46:17.833987986  -  16:46:17.833496370  =  0.000491619
-192.168.1.1  0x00009dfc  1     d.dropbox.com                 16:46:18.318778544  -  16:46:18.318290966  =  0.000487566
-192.168.1.1  0x0000c703  1     subscription.rhsm.redhat.com  16:47:17.953157771  -  16:47:17.952694842  =  0.00046277
-192.168.1.1  0x0000d723  1     subscription.rhsm.redhat.com  16:46:17.936377046  -  16:46:17.935893457  =  0.000483513
-192.168.1.1  0x0000eb56  28    subscription.rhsm.redhat.com  16:47:18.677787506  -  16:47:18.675716649  =  0.0020709
-192.168.1.1  0x0000ef21  1     subscription.rhsm.redhat.com  16:47:18.952594812  -  16:47:18.952089720  =  0.000504971
-192.168.1.1  0x0000f661  1     www.google.com                16:47:03.363154341  -  16:47:03.362609063  =  0.000545263
+Server       ID          Type  Name                          Rode  Respose-time        -  Query-time          =  Delta-time
+192.168.1.1  0x00000938  1     subscription.rhsm.redhat.com  0     16:47:18.954770787  -  16:47:18.954321824  =  0.000448942
+192.168.1.1  0x000011b9  1     d.dropbox.com                 0     16:46:18.311503201  -  16:46:18.232357317  =  0.0791459
+192.168.1.1  0x00001302  1     subscription.rhsm.redhat.com  0     16:47:17.950767160  -  16:47:17.950227048  =  0.000540257
+192.168.1.1  0x000013ae  1     subscription.rhsm.redhat.com  0     16:46:17.938781144  -  16:46:17.938380590  =  0.000400782
+192.168.1.1  0x00001418  12    196.193.58.216.in-addr.arpa   0     16:47:04.081949744  -  16:47:03.401008730  =  0.680941
+192.168.1.1  0x00003b25  1     subscription.rhsm.redhat.com  0     16:47:18.676233199  -  16:47:18.675692420  =  0.000540972
+192.168.1.1  0x00004b96  28    subscription.rhsm.redhat.com  0     16:47:18.953927717  -  16:47:18.952111412  =  0.00181627
+192.168.1.1  0x000061e3  1     client.dropbox.com            0     16:46:17.820613668  -  16:46:17.558599440  =  0.262014
+192.168.1.1  0x000063c4  1     subscription.rhsm.redhat.com  0     16:47:18.678505569  -  16:47:18.678054622  =  0.000451088
+192.168.1.1  0x0000658b  1     log.getdropbox.com            0     16:46:18.220943881  -  16:46:17.842960949  =  0.377983
+192.168.1.1  0x000077f8  1     www.google.com                0     16:46:00.577802806  -  16:46:00.577284082  =  0.000518799
+192.168.1.1  0x00007bb8  28    subscription.rhsm.redhat.com  0     16:46:17.937824958  -  16:46:17.935915704  =  0.00190926
+192.168.1.1  0x0000836f  28    subscription.rhsm.redhat.com  0     16:47:17.952087425  -  16:47:17.950249823  =  0.00183749
+192.168.1.1  0x00009177  28    log.getdropbox.com            0     16:46:18.219846662  -  16:46:17.842980113  =  0.376867
+192.168.1.1  0x000095a7  1     client.dropbox.com            0     16:46:17.833987986  -  16:46:17.833496370  =  0.000491619
+192.168.1.1  0x00009dfc  1     d.dropbox.com                 0     16:46:18.318778544  -  16:46:18.318290966  =  0.000487566
+192.168.1.1  0x0000c703  1     subscription.rhsm.redhat.com  0     16:47:17.953157771  -  16:47:17.952694842  =  0.00046277
+192.168.1.1  0x0000d723  1     subscription.rhsm.redhat.com  0     16:46:17.936377046  -  16:46:17.935893457  =  0.000483513
+192.168.1.1  0x0000eb56  28    subscription.rhsm.redhat.com  0     16:47:18.677787506  -  16:47:18.675716649  =  0.0020709
+192.168.1.1  0x0000ef21  1     subscription.rhsm.redhat.com  0     16:47:18.952594812  -  16:47:18.952089720  =  0.000504971
+192.168.1.1  0x0000f661  1     www.google.com                0     16:47:03.363154341  -  16:47:03.362609063  =  0.000545263
 
 
 Unanswered queries
@@ -112,7 +120,7 @@ Figure 1
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-07-11</h5>
+This page was last modified on 18-02-13</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
