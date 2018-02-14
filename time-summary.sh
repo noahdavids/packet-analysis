@@ -27,8 +27,10 @@
 #   filter out files with a space in the path and report those files at the
 #   end. I just could find a clean way to include them and it is probably
 #   easier to remove the space in the name manually
+# Version 1.5 Frebruary 13, 2018
+#   filter out files with no packets and hence no start or end times
 
-#TIMESUMMARYVERSION="1.4_2017-09-09"
+#TIMESUMMARYVERSION="1.5_2018-02-13"
 #
 # from https://github.com/noahdavids/packet-analysis.git
 #
@@ -78,10 +80,12 @@ cat /tmp/time-summary-2 | while read file; do capinfos -aS $file \
 # that /tmp/time-summary-3 will have blank lines the $(#file) returns
 # the number of characters in the $file so I test for 0 to skip the
 # blank lines. Also if the packets have been size limited there is a message
-# the "grep -v" filters out the line with that message.
+# the "grep -v" filters out the line with that message. Also a file with no
+# packets with have a time of n/a so that gets filtered out too.
 cat /tmp/time-summary-3 | while read file; do if [ "${#file}" -gt 0 ]; then \
     capinfos -ae $file | grep -v "Packet size limit" | tr "\n" " " \
-    | sed "s/File name:/\n/g"; fi; done > /tmp/time-summary-4
+    | sed "s/File name:/\n/g"; fi | grep -v " time: \s* n/a"; done \
+    > /tmp/time-summary-4
 
 # create a table "start-time" - ""end-time" File-path. The first line in
 # /tmp/time-summary-4 is blank, the "(NF > 1)" awk test skips that line.
@@ -102,5 +106,7 @@ if [ $(cat /tmp/time-summary-5 | wc -l) -gt 0 ]
 in their path"
       cat /tmp/time-summary-5
 fi
+#
+# time-summary.sh ends here
 
 
