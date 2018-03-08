@@ -15,9 +15,12 @@
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 </center>
 <p>
-This macro uses tshark to match segments from 1 TCP stream in a "template" trace with segments in another, target, trace. It matches by extracting a string of TCP data from a segment in the template stream and looking for a frame that contains the same string in the target trace. So for every segment in the template stream the target trace is searched once. This is not a speedy process. The strings do no have to be in the same relative position in the template and target segments.
+This macro uses tshark to match segments from 1 TCP stream in a "template"trace with segments in another, target, trace. It matches by extracting a string of TCP data from a segment in the template stream and looking for a frame that contains the same string in the target trace. So for every segment in the template stream the target trace is searched once. This is not a speedy process. The strings do no have to be in the same relative position in the template and target segments. In an effort to speed things up and remove strings that are probably not unique the target string is skipped if there are too many repeating characters. Repeating charactersare removed and the resulting string length must be at least 33% of the original string length. 
 <p>
-The output is first a count of the number of segments found in the template file followed by two tables. The first table is of uniquely matched segments each row is the frame number from the template trace, the frame number from the target trace and the stream number that the target frame belongs to. There is also a count of matches. The second table is of non-unique matches, that is the template occurred more than once in the target. Each row is the template frame number followed by the list of matching target frames. Either of these tables may be skipped if they are empty. Non matching template frames are not displayed so if there are no matches the only thing displayed is the count of template segments found.
+<span style='color:black;background:#FF0000'><b>TO RUN THIS SCRIPT YOU MUST CREATE A pm-decodes PROFILE with all protocols <span style='color:red;background:#FFFFFF'>EXCEPT</span> Ethernet, SLL, IPv4, IPv6, TCP and ECHO <span style='color:red;background:#FFFFFF'>disabled</span></b></span>
+<p>
+The output is first a count of the number of segments matching the port filters in the template file and the number of segments where the template string met the 33% rule. This is followed by two tables. The first table is of uniquely matched segments each row is the frame number from the template trace, the string and then the frame number dash TCP stream number that the target frame belongs to. The second table is of non-unique matches, that is the template occurred more than once in the target. Each row is the template frame number, the string, and the the first 20 matching target frame number dash TCP stream numbers. I figured 20 matches was enough. Either of these tables may be skipped if they are empty. Template frames with no match in any target frame not displayed so if there are no matches at all the only thing displayed is the in initial number of segments matching
+the port filter and a count of the template strings meeting the 33% rule and then a message saying no matches were found.
 <p>
 You might take a look at packet-matcher-faster.sh. It matches on ip.id, tcp.seq and tcp.ack values. As long as the only thing that has changed in the IP addresses and or port numbers packet-matcher-faster is a better (faster) choice.
 
@@ -62,25 +65,20 @@ Example 1 - Showing both unique and non-unique matches
 $ ./packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 12 43
 packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 12 43
 
-20 template frames found
+packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 12 43
+20 segments match the tcp.port filter and 16 segments met the 33% rule
 
-Matching  Frames
-Template  Target  Stream
-101       36      2
-118       50      2
-156       89      2
-161       94      2
-162       95      2
-163       96      2
-165       98      2
-167       100     2
+6 Uniquely Matching Frames (37.5%)
+101 	 e7:da:aa:1e:e5:da:d5:31:7a:61:dd:c1:ee:98:bd:22:1f:56:fa:81:f9:9e:3b:bf:02:0f:91:c7:35:af:cb:94 	 36-2
+118 	 59:b5:76:a9:7f:13:f4:d6:fb:2b:2b:af:15:57:91:e1:89:cc:af:b3:9e:29:a4:ef:44:3b:2e:0b:4d:bb:2b:fe 	 50-2
+156 	 60:c2:7e:4b:93:96:59:c2:ec:5e:25:ee:e8:12:22:d1:2d:7b:0b:75:01:86:16:52:dd:d3:39:a0:e5:d8:84:d1 	 89-2
+161 	 00:01:1b:47:a6:a3:37:9b:5b:46:e3:8b:9c:fc:82:ce:47:cc:de:25:af:58:40:a6:a2:43:c9:90:e5:88:fc:f6 	 94-2
+162 	 89:c0:00:e4:00:b2:8c:3f:73:2f:38:fc:87:59:83:91:b1:88:5e:2a:41:45:4a:74:99:a7:3e:d3:e4:08:2f:84 	 95-2
+163 	 00:01:19:6a:bd:64:98:0f:1a:78:3d:a0:78:79:10:49:2c:c7:62:7c:30:34:6c:16:2b:97:68:7f:42:bc:a2:f2 	 96-2
 
-8 matching frames
-
-non-unique  matches
-Template    Target
-120         51       61  145  204  469
-149         62       82  146  205  217  242  470  851
+2 non-Uniquely Matching Frames (12.5%)
+120 	 75:74:75:2e:62:65:82:0b:79:6f:75:74:75:62:65:2e:63:6f:6d:82:14:79:6f:75:74:75:62:65:65:64:75:63 	 51-2 61-3 145-11 204-13 469-17
+149 	 71:fa:cf:f4:1e:23:c7:9a:69:63:54:5f:eb:4c:d6:19:28:23:64:66:8e:1c:c7:87:80:64:5f:04:8b:26:af:98 	 62-3 82-2 146-11 205-13 217-14 242-15 470-17 851-20      
 
 
 If we check out the first matching pair we see its a client hello message. 
@@ -91,7 +89,7 @@ $ tshark -r nat-example-3-inside.cap -Y "frame.number == 101"
 $ tshark -r nat-example-3-outside.cap -Y "frame.number == 36"
    36   1.245088 192.168.0.10 → 216.58.193.206 SSL 2 0x9ec9 (40649) Client Hello
 
-The Selected range 12 thru 43 is the random field in the SSL header. It is better to match on random data.
+The selected range 12 thru 43 is the random field in the SSL header. It is better to match on random data.
 
 $ tshark -r nat-example-3-inside.cap  -Y "frame.number == 101" -d tcp.port==443,echo -d tcp.port==48280,echo -T fields -e frame.numbe
 r -e echo.data | awk '{print $2}' | cut -c $((((12-1)*3)+1))-$(((43*3)-1))
@@ -125,7 +123,7 @@ Figure 1
 <p>
 
 
-Example 2 - If the string is not long enough or its position is poorly chosen you can send up with no unique matches
+Example 2 - If the string is not long enough or its position is poorly chosen you can end up with no unique matches
 <p>
 
 <center>
@@ -135,19 +133,26 @@ Example 2 - If the string is not long enough or its position is poorly chosen yo
 $ ./packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 3 10
 packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48280 443 3 10
 
-20 template frames found
+20 segments match the tcp.port filter and 20 segments met the 33% rule
 
+16 non-Uniquely Matching Frames (80%)
+101 	 01:00:b4:01:00:00:b0:03 	 36-2 45-3
+118 	 03:00:44:02:00:00:40:03 	 50-2 60-3 144-11 203-13 241-15 468-17 850-20
+120 	 6f:6f:2e:67:6c:82:08:79 	 51-2 61-3 145-11 204-13 469-17
+149 	 49:e5:ac:d7:64:64:77:5b 	 62-3 82-2 146-11 205-13 217-14 242-15 470-17 851-20
+156 	 03:00:46:10:00:00:42:41 	 78-3 80-7 89-2 115-8 116-6 150-11 195-12 209-13 225-14 247-15 475-17 856-20
+161 	 03:00:98:00:00:00:00:00 	 79-3 94-2 151-11 211-13 258-15 476-17 857-20
+162 	 03:00:ee:04:00:00:ea:00 	 86-3 95-2
+163 	 03:00:40:00:00:00:00:00 	 87-3 96-2 157-11 223-13 255-15 262-15 482-17 906-20
+165 	 03:00:21:00:00:00:00:00 	 3-1 5-1 88-3 93-3 98-2 100-2 159-11 160-11 224-13 228-13 233-13 261-15 265-15 479-17 483-17 484-17 908-20 909-20 1793-11 3479-22
+167 	 03:00:21:00:00:00:00:00 	 3-1 5-1 88-3 93-3 98-2 100-2 159-11 160-11 224-13 228-13 233-13 261-15 265-15 479-17 483-17 484-17 908-20 909-20 1793-11 3479-22
+8751 	 03:00:21:00:00:00:00:00 	 3-1 5-1 88-3 93-3 98-2 100-2 159-11 160-11 224-13 228-13 233-13 261-15 265-15 479-17 483-17 484-17 908-20 909-20 1793-11 3479-22
+8753 	 03:00:29:00:00:00:00:00 	 15-1 19-1 21-1 25-1 30-1 31-1 132-1 137-1 271-15 276-15 644-17 654-17 839-11 843-11 911-20 913-20 1794-11 1809-11 3142-17 3144-17
+8755 	 03:00:29:00:00:00:00:00 	 15-1 19-1 21-1 25-1 30-1 31-1 132-1 137-1 271-15 276-15 644-17 654-17 839-11 843-11 911-20 913-20 1794-11 1809-11 3142-17 3144-17
+8761 	 03:00:21:00:00:00:00:00 	 3-1 5-1 88-3 93-3 98-2 100-2 159-11 160-11 224-13 228-13 233-13 261-15 265-15 479-17 483-17 484-17 908-20 909-20 1793-11 3479-22
+8762 	 03:00:29:00:00:00:00:00 	 15-1 19-1 21-1 25-1 30-1 31-1 132-1 137-1 271-15 276-15 644-17 654-17 839-11 843-11 911-20 913-20 1794-11 1809-11 3142-17 3144-17
+8764 	 03:00:29:00:00:00:00:00 	 15-1 19-1 21-1 25-1 30-1 31-1 132-1 137-1 271-15 276-15 644-17 654-17 839-11 843-11 911-20 913-20 1794-11 1809-11 3142-17 3144-17
 
-non-unique  matches
-Template    Target
-101         36       45
-118         50       60  144  203  241  468  850
-120         51       61  145  204  469
-149         62       82  146  205  217  242  470  851
-156         78       80  89   115  116  150  195  209  225  247  475  856
-161         79       94  151  211  258  476  857
-162         86       95
-. . . . .
 
 We see that there are no unique matches. Looking at the first non-unique match we see that both matches are client hello packets but 
 from two different streams, TCP stream 2 and 3.
@@ -167,12 +172,31 @@ Figure 2
 </center>
 <p>
 
+Example 3 - If no template frames are found you probably have some kind of error. Either the port numbers are wrong or maybe the pm-decodes profile is incorrect
+<p>
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre> 
+$ ./packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48281 443 43 50                                                                                  
+packet-matcher.sh nat-example-3-inside.cap nat-example-3-outside.cap 48281 443 43 50
+
+No template frames were found, either the port numbers were in
+error or the decode failed. Have you created the pm-decodes
+profile correctly?
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
 
 <br /><br />
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-09-19</h5>
+This page was last modified on 18-03-07</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
