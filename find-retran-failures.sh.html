@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>find-retran-failures.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>find-retran-failures.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This script uses tshark to look through a packet trace file and find TCP connections that appear to have failed because of retransmission issues. Ideally the packet trace file should be collected on the host sending the packets. If the trace file is collected on the receiver or at some point between sender and receiver it is possible failures will be missed.
+<p>
+For each failure identified output will consist of a line containing 
+<ol>
+<li>the TCP stream number</li>
+<li>the number of seconds before the last TCP segment in the file and the last segment in the stream. A stream that ends with 3 retransmissions 0.5 seconds before the last TCP segment in the trace is less likely to have failed then one that ends 200 seconds before the last TCP segment since there is less time to receive the ACK. Anything less than 0.1 seconds is ignored.</li>
+<li>The first IP address and the number of its unACKed bytes</li>
+<li>The second IP address and number of its unACKed bytes</li>
+</ol>
+This is followed by the last 20 lines of the TCP stream with the columns
+<ol>
+<li>TCP stream number</li>
+<li>time since start of trace file (relative time)</li>
+<li>source IP address</li>
+<li>source port</li>
+<li>destination IP address</li>
+<li>destination port</li>
+<li>IP ID (this makes it easy to spot duplicated packets)</li>
+<li>IP TTL (makes it easy to see which IP address is local)</li>
+<li>TCP sequence number</li>
+<li>TCP ACK number</li>
+<li>TCP length</li>
+<li>FIN flag (1 == FIN)</li>
+<li>TCP reset flag (1 == RST)</li>
+<li>tshark expert info</li>
+</ol>
+And this is followed by a list of TCP streams where the only segments in the stream where SYN segments. technically these are not TCP connections that have failed because of retransmissions since the connection was never completed. 
+<p>
+In addition as the script is running it prints out the stream number that it is currently processing. You can look at the partial results by monitoring the file /tmp/find-retran-failures-3.
+<p>
+
+<b><h3>Usage</h3></b>
+find-retran-failures.sh FILE-NAME [FILTER]
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+<b>FILTER</b>
+<br>
+An optional filter that can be used to limit the connections to be considered.
+<br><br>
+
+<b><h3>Examples</h3></b>
+
+Example 1
+<p>
+22 total streams with 1 stream ending with retransmissions
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./find-retran-failures.sh /cloud/seagate/packet-trace-library/retransmission-failure.pcap
+current stream:0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
+=======================================================
+TCP Stream: 21      Ends 61.1239 seconds before trace ends      10.154.0.116 bytes unACKed:  0      10.154.2.66 bytes UnACKed 1705
+=======================================================
+21 104.624729000 10.154.0.116 57862 10.154.2.66 5002 0x00009bb7 63 4109210776 1359331983 360 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.625579000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf22 64 1359331983 4109211136 908 0 0
+21 104.627910000 10.154.0.116 57862 10.154.2.66 5002 0x00009bb8 64 4109211136 1359332891 67 0 0
+21 104.629978000 10.154.0.116 57862 10.154.2.66 5002 0x00009bb8 63 4109211136 1359332891 67 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.630596000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf23 64 1359332891 4109211203 220 0 0
+21 104.632974000 10.154.0.116 57862 10.154.2.66 5002 0x00009bb9 64 4109211203 1359333111 75 0 0
+21 104.635365000 10.154.0.116 57862 10.154.2.66 5002 0x00009bb9 63 4109211203 1359333111 75 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.635568000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf24 64 1359333111 4109211278 84 0 0
+21 104.638737000 10.154.0.116 57862 10.154.2.66 5002 0x00009bba 64 4109211278 1359333195 361 0 0
+21 104.641014000 10.154.0.116 57862 10.154.2.66 5002 0x00009bba 63 4109211278 1359333195 361 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.641788000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf25 64 1359333195 4109211639 1448 0 0
+21 104.641792000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf26 64 1359334643 4109211639 257 0 0
+21 104.650946000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf27 64 1359334643 4109211639 257 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.844863000 10.154.0.116 57862 10.154.2.66 5002 0x00009bbb 64 4109211278 1359333195 361 0 0 Expert Info (Note/Sequence): This frame is a (suspected) spurious retransmission,Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.846582000 10.154.0.116 57862 10.154.2.66 5002 0x00009bbb 63 4109211278 1359333195 361 0 0 Expert Info (Note/Sequence): This frame is a (suspected) spurious retransmission,Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 104.846699000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf28 64 1359334900 4109211639 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#1)
+21 105.060983000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf29 64 1359333195 4109211639 1448 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 105.471957000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf2a 64 1359333195 4109211639 1448 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 106.293939000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf2b 64 1359333195 4109211639 1448 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+21 107.935953000 10.154.2.66 5002 10.154.0.116 57862 0x0000bf2c 64 1359333195 4109211639 1448 0 0 Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+=======================================================
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2
+<p>
+465 streams evaluated, 2 identified but the conclusion is not so clear cut. The remote host (TTL == 54) sends a FIN and that FIN is ACKed by the local side (TTL  == 64). The local side sends data and the a reset. It is not your typical tretransmission failure where the last set of segments are all retransmissions but may be that the reset is due to a time out issue on the local host cause by the retransmissions from the remote host delaying the application. It deserves to be looked at.
+<p>
+There is also a list of TCP streams which are nothing by TCP SYN segments. You could run the trace through failed-connection-attempts.sh for more details.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./find-retran-failures.sh /cloud/seagate/packet-trace-library/retransmissions-2.pcap 
+current stream:0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 3
+6, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73,
+ 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 
+109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 
+139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 
+169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 
+199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 
+229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 
+259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 
+289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 
+319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 
+349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 
+379, 380, 381, 382, 383, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 
+409, 410, 411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 
+439, 440, 441, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 
+=======================================================
+TCP Stream: 25      Ends 2280.47 seconds before trace ends      10.120.133.114 bytes unACKed:  37      67.216.187.4 bytes UnACKed 0
+=======================================================
+25 63.816669000 10.120.133.114 44738 67.216.187.4 443 0x00002db2 64 4032483366 937659214 0 0 0
+25 63.816678000 67.216.187.4 443 10.120.133.114 44738 0x00007aa7 54 937659214 4032483366 869 0 0
+25 63.816680000 10.120.133.114 44738 67.216.187.4 443 0x00002db3 64 4032483366 937660083 0 0 0
+25 63.837388000 10.120.133.114 44738 67.216.187.4 443 0x00002db4 64 4032483366 937660083 326 0 0
+25 63.848590000 67.216.187.4 443 10.120.133.114 44738 0x00007aa8 54 937660083 4032483692 59 0 0
+25 63.848702000 10.120.133.114 44738 67.216.187.4 443 0x00002db5 64 4032483692 937660142 1221 0 0
+25 63.848804000 10.120.133.114 44738 67.216.187.4 443 0x00002db6 64 4032484913 937660142 2768 0 0
+25 63.854634000 67.216.187.4 443 10.120.133.114 44738 0x00007aa9 54 937660142 4032486297 0 0 0
+25 63.854644000 10.120.133.114 44738 67.216.187.4 443 0x00002db8 64 4032487681 937660142 69 0 0
+25 63.858758000 67.216.187.4 443 10.120.133.114 44738 0x00007aaa 54 937660142 4032487750 0 0 0
+25 63.909486000 67.216.187.4 443 10.120.133.114 44738 0x00007aac 54 937661526 4032487750 146 0 0 Expert Info (Warning/Sequence): Previous segment not 
+captured (common at capture start),Expert Info (Warning/Protocol): Ignored Unknown Record
+25 63.909504000 10.120.133.114 44738 67.216.187.4 443 0x00002db9 64 4032487750 937660142 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#1)
+25 63.909703000 67.216.187.4 443 10.120.133.114 44738 0x00007aad 54 937661672 4032487750 37 0 0
+25 63.909709000 10.120.133.114 44738 67.216.187.4 443 0x00002dba 64 4032487750 937660142 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#2)
+25 63.909791000 67.216.187.4 443 10.120.133.114 44738 0x00007aae 54 937661709 4032487750 0 1 0 Expert Info (Chat/Sequence): Connection finish (FIN)
+25 63.909796000 10.120.133.114 44738 67.216.187.4 443 0x00002dbb 64 4032487750 937660142 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#3)
+25 63.914735000 67.216.187.4 443 10.120.133.114 44738 0x00007aaf 54 937660142 4032487750 1384 0 0 Expert Info (Note/Sequence): This frame is a (suspec
+ted) fast retransmission,Expert Info (Note/Sequence): This frame is a (suspected) retransmission
+25 63.914742000 10.120.133.114 44738 67.216.187.4 443 0x00002dbc 64 4032487750 937661710 0 0 0
+25 63.915217000 10.120.133.114 44738 67.216.187.4 443 0x00002dbd 64 4032487750 937661710 37 0 0
+25 63.915260000 10.120.133.114 44738 67.216.187.4 443 0x00002dbe 64 4032487787 937661710 0 0 1 Expert Info (Warning/Sequence): Connection reset (RST)
+=======================================================
+=======================================================
+TCP Stream: 26      Ends 2280.33 seconds before trace ends      10.120.133.114 bytes unACKed:  37      67.216.187.4 bytes UnACKed 0
+=======================================================
+26 64.049619000 67.216.187.4 443 10.120.133.114 44739 0x000027b2 54 3353802527 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.049621000 10.120.133.114 44739 67.216.187.4 443 0x0000bd34 64 3973016576 3353803911 0 0 0
+26 64.049626000 67.216.187.4 443 10.120.133.114 44739 0x000027b3 54 3353803911 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.049629000 10.120.133.114 44739 67.216.187.4 443 0x0000bd35 64 3973016576 3353805295 0 0 0
+26 64.049635000 67.216.187.4 443 10.120.133.114 44739 0x000027b7 54 3353806734 3973016576 0 1 0 Expert Info (Chat/Sequence): Connection finish (FIN)
+26 64.049637000 10.120.133.114 44739 67.216.187.4 443 0x0000bd36 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#1)
+26 64.051788000 67.216.187.4 443 10.120.133.114 44739 0x000027b8 54 3353796991 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.051793000 10.120.133.114 44739 67.216.187.4 443 0x0000bd37 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#2)
+26 64.051809000 67.216.187.4 443 10.120.133.114 44739 0x000027b9 54 3353798375 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment,Expert Info (Error/Malformed): New fragment overlaps old data (retransmission?)
+26 64.051810000 10.120.133.114 44739 67.216.187.4 443 0x0000bd38 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#3)
+26 64.051829000 67.216.187.4 443 10.120.133.114 44739 0x000027ba 54 3353799759 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.051830000 10.120.133.114 44739 67.216.187.4 443 0x0000bd39 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#4)
+26 64.051849000 67.216.187.4 443 10.120.133.114 44739 0x000027bb 54 3353801143 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.051851000 10.120.133.114 44739 67.216.187.4 443 0x0000bd3a 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#5)
+26 64.053673000 67.216.187.4 443 10.120.133.114 44739 0x000027bc 54 3353802527 3973016576 1384 0 0 Expert Info (Warning/Sequence): This frame is a (su
+spected) out-of-order segment
+26 64.053677000 10.120.133.114 44739 67.216.187.4 443 0x0000bd3b 64 3973016576 3353805295 0 0 0 Expert Info (Note/Sequence): Duplicate ACK (#6)
+26 64.054395000 67.216.187.4 443 10.120.133.114 44739 0x000027be 54 3353805295 3973016576 1384 0 0 Expert Info (Note/Sequence): This frame is a (suspe
+cted) fast retransmission,Expert Info (Note/Sequence): This frame is a (suspected) retransmission,Expert Info (Warning/Protocol): Ignored Unknown Reco
+rd
+26 64.054401000 10.120.133.114 44739 67.216.187.4 443 0x0000bd3c 64 3973016576 3353806735 0 0 0
+26 64.054566000 10.120.133.114 44739 67.216.187.4 443 0x0000bd3d 64 3973016576 3353806735 37 0 0
+26 64.054597000 10.120.133.114 44739 67.216.187.4 443 0x0000bd3e 64 3973016613 3353806735 0 0 1 Expert Info (Warning/Sequence): Connection reset (RST)
+=======================================================
+
+
+=======================================================
+The following streams contain nothing but SYN segments
+=======================================================
+6,20,21,29,33,34,41,45,57,60,62,66,70,73,75,77,81,84,85,97,102,105,107,111,115,128,137,152,158,173,175,264,267,273,275,276,280,283,285,288,289,302,305
+,307,309,311,316,320,322,324,326,339,342,344,347,351,355,356,359,363,365,367,379,383,387,389,392,396,400,402,404,406,410,421,425,426,429,432,435,437,4
+40,443,447,449,460,462
+
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - No connnections failed due to retransmissions
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ find-retran-failures.sh retransmissions.pcap
+current stream:0, 
+No TCP connections appear to have failed due of retransmissions
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+
+Example 4 - No streams found
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ find-retran-failures.sh retransmissions.pcap
+current stream:0, 
+No TCP connections appear to have failed due of retransmissions
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 18-03-20</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>

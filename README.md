@@ -26,6 +26,11 @@ find-reset-connections.sh
 =========================
 Find TCP connections that have been reset without being closed. See [find-reset-connections.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find-reset-connections.sh.html).
 
+
+find-retran-failures.sh
+=======================
+Find TCP connections that appear to have failed because of retransmission failures. See [find-retran-failures.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find-retran-failures.sh.html).
+
 fix-pcap.sh
 ===========
 Removes a partial packet at the end of a packet trace file. See [fix-pcap.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/fix-pcap.sh.html).
