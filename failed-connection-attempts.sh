@@ -89,8 +89,11 @@
 #  Fixed false positive where client and server both send data but do not ACK
 #  the data -- there may be an issue with the connection BUT the connection
 #  attemp succeeded OK.
+# Version 2.8 March 28, 2018
+#   Fixed typos in comments. Corrected false CLR when client sends a SYN
+#   followed by reset but server never sends anything, should be NOS not CLR
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.7_2018-02-06"
+FAILEDCONNECTIONATTEMPTSVERSION="2.8_2018-03-28"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -301,7 +304,7 @@ cat /tmp/failed-connection-attempts-1 | \
             continue
          fi
 
-# RESET flag is set, mark it as failed, rember this is the first segment from
+# RESET flag is set, mark it as failed, remember this is the first segment from
 # from the server that does not have the SYN flag set.
 
          if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-2s | \
@@ -341,11 +344,11 @@ cat /tmp/failed-connection-attempts-1 | \
 
 # Did the client send a FIN with an ACK of 2 indicating that it closed
 # the connection in response to an immediate FIN from the server. Keep
-# in mind that we are only here if the client never sent and data so
+# in mind that we are only here if the client never sent any data so
 # the only reason for a FIN with an ACK of 2 is that neither side sent
 # any data and the server sent an immediate FIN. We should have spotted
 # this already but only if the server didn't send an ACK before the FIN.
-# I flaf this with a lower case IMC so I can tell the difference.
+# I flag this with a lower case IMC so I can tell the difference.
 
           if [ $(awk '($10 == 1 && $11 == 2) {print $0}' \
              /tmp/failed-connection-attempts-2c | wc -l) -gt 0 ]
@@ -354,15 +357,25 @@ cat /tmp/failed-connection-attempts-1 | \
              continue
           fi
 
-# Did the client send a reset and did not send data or ACK data (covered
-# in a previous test)
+# If the client sent a reset and did not send data (sequence# == 1) or ACKed
+# data (ACK# == 0 or 1, I have seen both scenarios depending on client) then
+# this is a no segments from the server
 
-          if [ $(awk '($8 == 1) {print $0}' \
+          if [ $(awk '($8 == 1 && $11 < 2 && $13 == 1) {print $0}' \
              /tmp/failed-connection-attempts-2c  | wc -l) -gt 0 ]
              then echo $stream $server:$sport $client:$cport \
-                  "CLR" | tr "_" " " >> /tmp/failed-connection-attempts-3
+                  "NOS" | tr "_" " " >> /tmp/failed-connection-attempts-3
              continue
           fi
+
+# If the client sent a reset but sent data (sequence# > 1) or ACKed data
+# this is not a failed connection
+
+          if [ $(awk '($8 == 1 && $11 > 1 && $13 > 1) {print $0}' \
+             /tmp/failed-connection-attempts-2c  | wc -l) -gt 0 ]
+             then continue
+          fi
+
    fi
 
 # If we are here either the trace file has no segments (of any type from
