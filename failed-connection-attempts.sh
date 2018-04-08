@@ -17,6 +17,7 @@
 #             imc (lower case) if the determination is made by looking at the
 #             client's segments.
 #	SYN - the only response from the server is an ACK-SYN
+#       SaR - server sends both and only ACK-SYNs and resets
 #	NOS - there are NO tcp Segments from the server
 #       CLR - The server responds with an ACK-SYN but then the CLient sends
 #             a Reset or an ACK and then a reset
@@ -90,10 +91,14 @@
 #  the data -- there may be an issue with the connection BUT the connection
 #  attemp succeeded OK.
 # Version 2.8 March 28, 2018
-#   Fixed typos in comments. Corrected false CLR when client sends a SYN
-#   followed by reset but server never sends anything, should be NOS not CLR
+#  Fixed typos in comments. Corrected false CLR when client sends a SYN
+#  followed by reset but server never sends anything, should be NOS not CLR
+# Version 2.9 April 8, 2018
+#  Fixed failure to correctly recognize when the server responses with just
+#  a reset. Added the SaR failure scenario when the server sends both SYN-ACKs
+#  and resets but only SYN-ACKs and resets.
 
-FAILEDCONNECTIONATTEMPTSVERSION="2.8_2018-03-28"
+FAILEDCONNECTIONATTEMPTSVERSION="2.9_2018-04-08"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -251,7 +256,8 @@ cat /tmp/failed-connection-attempts-1 | \
 # else its a SYN. Note if th eserver sent data $12 > 0 it thinks there is
 # a good connection so we do too.
 
-         if [ $(awk '(!(($6 == 1 && $9 == 1) || ($6 == 1 && $11 == 1)) || \
+         if [ $(awk '(!(($6 == 1 && $7 == 0 && $8 == 0 && $9 == 1) || \
+            ($6 == 1 && $7 == 0 && $8 == 0 && $9 == 0 && $11 == 1)) || \
             ($12 > 0)) {print $0}' /tmp/failed-connection-attempts-2s | \
             wc -l) -eq 0 ]
             then if [ $(awk '(($8 == 1) && ($13 == 1)) {print $0}' \
@@ -286,6 +292,25 @@ cat /tmp/failed-connection-attempts-1 | \
             then continue
          fi
 
+# If the only server segments are resets without an ACK or an ACK of 1
+
+         if [ $(grep -v "$cport 0 0 1 0 0 0" /tmp/failed-connection-attempts-2s \
+              | grep -v "$cport 1 0 1 0 0 1" | wc -l) -eq 0 ]
+            then echo $stream $server:$sport $client:$cport "RST" | \
+                     tr "_" " " >> /tmp/failed-connection-attempts-3
+                 continue
+         fi
+
+# If the only server segments are ACK-SYNS and resets without an ACK or an
+# ACK of 1
+
+         if [ $(grep -v "$cport 1 0 0 1 0" /tmp/failed-connection-attempts-2s \
+               | grep -v "$cport 0 0 1 0 0 0" | grep -v "$cport 1 0 1 0 0 1" \
+               | wc -l) -eq 0 ]
+            then echo $stream $server:$sport $client:$cport "SaR" | \
+                     tr "_" " " >> /tmp/failed-connection-attempts-3
+                 continue
+         fi
 
 # At this point we only care about the first non-SYN packet from the server
 
@@ -302,16 +327,6 @@ cat /tmp/failed-connection-attempts-1 | \
             then echo $stream $server:$sport $client:$cport "IMC" | \
                      tr "_" " " >> /tmp/failed-connection-attempts-3
             continue
-         fi
-
-# RESET flag is set, mark it as failed, remember this is the first segment from
-# from the server that does not have the SYN flag set.
-
-         if [ $(awk '($8 == 1) {print $0}' /tmp/failed-connection-attempts-2s | \
-               wc -l) -gt 0 ]
-            then echo $stream $server:$sport $client:$cport "RST" | tr "_" " " \
-                                   >> /tmp/failed-connection-attempts-3
-                 continue
          fi
     fi
 

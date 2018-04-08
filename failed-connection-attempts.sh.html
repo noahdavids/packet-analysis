@@ -23,6 +23,7 @@ The first column is the TCP stream number followed by the server-ip:server-port 
 <tr><td>CHA</td><td>-</td><td>first response from the server is a CHAllenge ACK</td></tr>
 <tr><td>IMC</td><td>-</td><td>server just accepts and then IMmediately Closes the connection with a FIN. Note there are two versions of this; IMC (upper case) if the determination is made by looking at the server's segments and imc (lower case) if the determination is made by looking at the client's segments.</td></tr>
 <tr><td>SYN</td><td>-</td><td>the only response from the server is an ACK-SYN</td></tr>
+<tr><td>SaR</td><td>-</td><td>server sends both and only ACK-SYNs and resets</td></tr>
 <tr><td>NOS</td><td>-</td><td>there are NO tcp Segments from the server</td></tr>
 <tr><td>CLR</td><td>-</td><td>the server responds with a ACK-SYN but the CLient sends a Reset or an ACK followed by a reset.</td></tr>
 <tr><td>CIC</td><td>-</td><td>Client Immediatelty Closes the connection with a FIN after the Server's ACK-SYN</td></tr>
@@ -130,43 +131,45 @@ Figure 2
 </center>
 <p>
 
-Example 3 has 4 reset connections. In these connections the server does send a ACK-SYN but does not ACK any data sent by the client and eventually sends a reset -- still without ACKing and data from the client.
+Example 3 has 4 SaR connections. In these connections then server sends a ACK-SYN but does not ACK any data sent by the client and eventually sends a reset -- still without ACKing and data from the client.
 <center>
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
 $ ./failed-connection-attempts.sh test-3.pcap 
 failed-connection-attempts.sh test-3.pcap
-0   10.104.188.112:14805  10.104.32.29:18399  RST
-5   10.104.188.112:14805  10.104.32.29:18446  RST
-12  10.104.188.112:14805  10.104.32.29:18501  RST
-14  10.104.188.112:14805  10.104.32.29:18502  RST
+0   192.168.13.112:14805  172.116.6.29:18399  SaR
+5   192.168.13.112:14805  172.116.6.29:18446  SaR
+12  192.168.13.112:14805  172.116.6.29:18501  SaR
+14  192.168.13.112:14805  172.116.6.29:18502  SaR
+
 
 $ tshark -r test-3.pcap -Y "tcp.stream == 5" -o tcp.ignore_tcp_timestamps:TRUE
-   86 169.498392 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=512
-   87 169.498415 172.16.188.112 &rarr; 172.16.32.29 TCP 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-   88 169.510142 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [ACK] Seq=1 Ack=1 Win=29696 Len=0
-   89 169.526819 172.16.32.29 &rarr; 172.16.188.112 TCP 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-   90 169.744267 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-   91 169.994984 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-   92 170.497932 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  103 171.034791 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  104 171.046688 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#1] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
-  105 171.504121 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  112 173.236780 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  114 173.248431 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#2] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
-  116 173.515988 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  121 177.437780 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  122 177.449334 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#3] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
-  123 177.535986 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  128 185.439763 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  129 185.451347 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#4] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
-  130 185.583983 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  131 201.446772 172.16.188.112 &rarr; 172.16.32.29 TCP [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=0 Ack=1 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  132 201.458450 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Dup ACK 88#5] 18446 &rarr; 14805 [ACK] Seq=156 Ack=1 Win=29696 Len=0
-  133 201.663994 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  163 233.856044 172.16.32.29 &rarr; 172.16.188.112 TCP [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=1 Ack=1 Win=29696 Len=155
-  164 233.856065 172.16.188.112 &rarr; 172.16.32.29 TCP 14805 &rarr; 18446 [RST] Seq=1 Win=0 Len=0
+$ tshark -r failed-connections.0-5-12-14.pcap -Y "tcp.stream == 5" -o tcp.ignore_tcp_timestamps:TRUE
+   86 169.498392 172.116.6.29 &rarr; 192.168.13.112 TCP 66 18446 &rarr; 14805 [SYN] Seq=844174466 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=512
+   87 169.498415 192.168.13.112 &rarr; 172.116.6.29 TCP 66 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+   88 169.510142 172.116.6.29 &rarr; 192.168.13.112 TCP 60 18446 &rarr; 14805 [ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=0
+   89 169.526819 172.116.6.29 &rarr; 192.168.13.112 TCP 209 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+   90 169.744267 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+   91 169.994984 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+   92 170.497932 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  103 171.034791 192.168.13.112 &rarr; 172.116.6.29 TCP 66 [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  104 171.046688 172.116.6.29 &rarr; 192.168.13.112 TCP 60 [TCP Dup ACK 88#1] 18446 &rarr; 14805 [ACK] Seq=844174622 Ack=3849090800 Win=29696 Len=0
+  105 171.504121 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  112 173.236780 192.168.13.112 &rarr; 172.116.6.29 TCP 66 [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  114 173.248431 172.116.6.29 &rarr; 192.168.13.112 TCP 60 [TCP Dup ACK 88#2] 18446 &rarr; 14805 [ACK] Seq=844174622 Ack=3849090800 Win=29696 Len=0
+  116 173.515988 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  121 177.437780 192.168.13.112 &rarr; 172.116.6.29 TCP 66 [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  122 177.449334 172.116.6.29 &rarr; 192.168.13.112 TCP 60 [TCP Dup ACK 88#3] 18446 &rarr; 14805 [ACK] Seq=844174622 Ack=3849090800 Win=29696 Len=0
+  123 177.535986 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  128 185.439763 192.168.13.112 &rarr; 172.116.6.29 TCP 66 [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  129 185.451347 172.116.6.29 &rarr; 192.168.13.112 TCP 60 [TCP Dup ACK 88#4] 18446 &rarr; 14805 [ACK] Seq=844174622 Ack=3849090800 Win=29696 Len=0
+  130 185.583983 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  131 201.446772 192.168.13.112 &rarr; 172.116.6.29 TCP 66 [TCP Spurious Retransmission] 14805 &rarr; 18446 [SYN, ACK] Seq=3849090799 Ack=844174467 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  132 201.458450 172.116.6.29 &rarr; 192.168.13.112 TCP 60 [TCP Dup ACK 88#5] 18446 &rarr; 14805 [ACK] Seq=844174622 Ack=3849090800 Win=29696 Len=0
+  133 201.663994 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  163 233.856044 172.116.6.29 &rarr; 192.168.13.112 TCP 209 [TCP Retransmission] 18446 &rarr; 14805 [PSH, ACK] Seq=844174467 Ack=3849090800 Win=29696 Len=155
+  164 233.856065 192.168.13.112 &rarr; 172.116.6.29 TCP 54 14805 &rarr; 18446 [RST] Seq=3849090800 Win=0 Len=0
 </pre>
 </td></tr>
 </table>
@@ -181,22 +184,23 @@ Example 4 has an other more tradition traditional NOS trace where the server sen
 <pre>                                                                   
 $ ./failed-connection-attempts.sh test-4.pcap 
 failed-connection-attempts.sh test-4.pcap
-0   10.154.200.226:1521  10.154.228.185:58204  NOS
-27  10.154.200.226:1521  10.154.228.114:51731  RST
-28  10.154.200.226:1521  10.154.228.189:42003  NOS
-29  10.154.200.226:1521  10.154.228.174:37432  NOS
-30  10.154.200.226:1521  10.154.228.186:59652  NOS
-34  10.154.200.226:1521  10.154.228.193:40770  SYN
-35  10.154.200.226:1521  10.154.228.178:39664  NOS
-36  10.154.200.226:1521  10.154.228.188:35928  NOS
+0   192.168.20.226:1521  192.168.28.185:58204  NOS
+27  192.168.20.226:1521  192.168.28.114:51731  SaR
+28  192.168.20.226:1521  192.168.28.189:42003  NOS
+29  192.168.20.226:1521  192.168.28.174:37432  NOS
+30  192.168.20.226:1521  192.168.28.186:59652  NOS
+34  192.168.20.226:1521  192.168.28.193:40770  SYN
+35  192.168.20.226:1521  192.168.28.178:39664  NOS
+36  192.168.20.226:1521  192.168.28.188:35928  NOS
 
 
 $ tshark -r test-4-.pcap -Y "tcp.stream == 0" -o tcp.ignore_tcp_timestamps:TRUE 2>/dev/null
-    1   0.000000 10.100.128.185 &rarr; 10.100.100.226 TCP 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  238   0.999326 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  249   2.999347 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  272   6.999420 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
- 1677  14.999671 10.100.128.185 &rarr; 10.100.100.226 TCP [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=0 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+    1   0.000000 192.168.28.185 &rarr; 192.168.20.226 TCP 74 58204 &rarr; 1521 [SYN] Seq=2929014958 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  238   0.999326 192.168.28.185 &rarr; 192.168.20.226 TCP 74 [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=2929014958 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  249   2.999347 192.168.28.185 &rarr; 192.168.20.226 TCP 74 [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=2929014958 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+  272   6.999420 192.168.28.185 &rarr; 192.168.20.226 TCP 74 [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=2929014958 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+ 1677  14.999671 192.168.28.185 &rarr; 192.168.20.226 TCP 74 [TCP Retransmission] 58204 &rarr; 1521 [SYN] Seq=2929014958 Win=14600 Len=0 MSS=1460 SACK_PERM=1 WS=128
+
 </pre>
 </td></tr>
 </table>
@@ -204,24 +208,30 @@ Figure 4
 </center>
 <p>
 
-Example 5 has a more traditional reset trace where the server responds with a reset immediately
+Example 5 shows an RST connection where the server responds with a immediately.
 <center>
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
 $ ./failed-connection-attempts.sh test-5.pcapng
 failed-connection-attempts.sh test-5.pcapng
-8   192.168.1.200:12481  192.168.1.3:58438  RST
-9   192.168.1.200:12481  192.168.1.3:58440  RST
-12  192.168.1.200:12481  192.168.1.3:58444  RST
-18  192.168.1.200:12481  192.168.1.3:58454  NOS
-19  192.168.1.200:12481  192.168.1.3:58456  NOS
-21  192.168.1.200:12481  192.168.1.3:58478  NOS
-22  192.168.1.200:12481  192.168.1.3:58480  NOS
+70   172.16.1.102:80  172.16.2.195:54735  RST
+74   172.16.1.103:80  172.16.2.195:54740  RST
+147  172.16.1.103:80  172.16.2.195:54854  RST
+158  172.16.1.102:80  172.16.2.195:54863  RST
+208  172.16.1.102:80  172.16.2.195:54883  RST
+244  172.16.1.103:80  172.16.2.195:54897  RST
+246  172.16.1.102:80  172.16.2.195:54900  RST
+295  172.16.1.102:80  172.16.2.195:54921  RST
 
-$ tshark -r test-5.pcapng -Y "tcp.stream == 8" -o tcp.ignore_tcp_timestamps:TRUE
-  166 25.044498125  192.168.1.3 &rarr; 192.168.1.200 TCP 58438 &rarr; 12481 [SYN] Seq=0 Win=29200 Len=0 MSS=1460 SACK_PERM=1 WS=128
-  167 25.045029361 192.168.1.200 &rarr; 192.168.1.3  TCP 12481 &rarr; 58438 [RST, ACK] Seq=1 Ack=1 Win=0 Len=0
+
+$ tshark -r failed-connections-70-etc.pcap -Y "tcp.stream == 70" -o tcp.ignore_tcp_timestamps:TRUE 2>/dev/null
+26922  48.242767 172.16.2.195 &rarr; 172.16.1.102 TCP 66 54735 &rarr; 80 [SYN] Seq=2480089605 Win=8192 Len=0 MSS=1460 WS=256 SACK_PERM=1
+26923  48.242783 172.16.1.102 &rarr; 172.16.2.195 TCP 54 80 &rarr; 54735 [RST, ACK] Seq=0 Ack=2480089606 Win=0 Len=0
+26966  48.742468 172.16.2.195 &rarr; 172.16.1.102 TCP 66 [TCP Spurious Retransmission] 54735 &rarr; 80 [SYN] Seq=2480089605 Win=8192 Len=0 MSS=1460 WS=256 SACK_PERM=1
+26967  48.742493 172.16.1.102 &rarr; 172.16.2.195 TCP 54 80 &rarr; 54735 [RST, ACK] Seq=0 Ack=2480089606 Win=0 Len=0
+27024  49.242508 172.16.2.195 &rarr; 172.16.1.102 TCP 62 [TCP Spurious Retransmission] 54735 &rarr; 80 [SYN] Seq=2480089605 Win=8192 Len=0 MSS=1460 SACK_PERM=1
+27025  49.242536 172.16.1.102 &rarr; 172.16.2.195 TCP 54 80 &rarr; 54735 [RST, ACK] Seq=0 Ack=2480089606 Win=0 Len=0
 </pre>
 </td></tr>
 </table>
@@ -301,7 +311,7 @@ Figure 8
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-12-12</h5>
+This page was last modified on 18-04-08</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
