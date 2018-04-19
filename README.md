@@ -1,3 +1,7 @@
+analyze-arps.sh
+===============
+Analyze the ARP packets in a trace file. Calculates the ARP response time and idenifies ARP requests with no replies, gratuitous ARPs, duplicate IPs and duplicate MACs. See [analyze-arps.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/analyze-arps.sh.html).
+
 average.sh
 ==========
 Average a value returned by tshark. See [average.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/average.sh.html).
@@ -21,6 +25,10 @@ Find TCP connection attempts that have a failed. There are 6 failure scenarios, 
 find-ips.sh
 ===========
 Uses egrep to list all strings in a file that match an IPv4 address format and the sort -u to get a unique list. Really just a one-liner by this way I do not have to remember (or type) the egrep string. Its useful with build-filter.sh to create a filter to display all the IPs listed in say a log file. See [find-ips.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find-ips.sh.html).
+
+find_mangled_sequence_numbers.sh
+================================
+Analyze a packet trace for packets where the sequence number in the ACK field does not match the sequence numbers in the selective acknowledgement blocks. See [find_mangled_sequence_numbers.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/find_mangled_sequence_numbers.sh.html).
 
 find-reset-connections.sh
 =========================
