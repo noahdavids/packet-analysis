@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>analyze-arps.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>analyze-arps.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro analyzes ARP requests and replies found in a packet trace showing the relative time of each ARP request, its reply and the response time. It also counts the number of ARP requests without a reply from each host for each target IP address, the number of gratuitous ARPs from each host and the number of unexpected replies. ARP requests without a reply are normal for broadcast requests since all hosts in the broadcast domain will see the request but only the sender will see the reply. It can also happen if the ARP request is unicast but the target's MAC address has been aged out of a switch's forwarding table and the switch floods the packet to all ports. The macro assumes that a reply immediately follows a request so if the source sends 2 requests without waiting for a reply the report will show 1 request without a reply, one request with a reply and 1 unexpected reply. This can also happen if the "any" device was used for the capture. Finally it reports on any duplicate IP addresses (1 IP address associated with more than 1 Ethernet MAC addresses) and duplicate Ethernet MAC addresses (1 Ethernet MAC address associated with more than 1 IP addresses). This can happen if an interface has multiple IP addresses, or there is a device doing proxy ARPs.
+<p>
+The sections for No, responses, Unexpected responses, gratuitous ARPs, duplicate IPs and duplicate MACs are only printed if they have something in them. If no ARPs are found in the trace file it will report that.
+<p>
+
+<b><h3>Usage</h3></b>
+analyze-arps.sh FILE-NAME
+<br><br>
+<b>FILE-NAME</b>
+<br>
+The file name (or path to the file), This file must be readable by tshark.
+<br><br>
+<p>
+
+<b><h3>Examples</h3></b>
+Example 1 - A trace file containing ARP requests and replies
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./analyze-arps.sh test1.pcapng                                                                   
+analyze-arps.sh test1.pcapng
+Normal responses:
+Request-time  Source-IP     Target-IP    Reply-from-MAC     Reply-time    Delta-time
+0.000000000   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  0.000031551   .000031551
+0.999999161   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  1.000011388   .000012227
+1.999976236   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  1.999986555   .000010319
+3.000020708   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  3.000036377   .000015669
+4.000053898   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  4.000069468   .000015570
+4.999989082   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  5.000000469   .000011387
+6.000019804   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  6.000036375   .000016571
+6.999939216   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  6.999949949   .000010733
+8.000051440   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  8.000068105   .000016665
+8.999979418   172.16.1.200  172.16.1.11  54:ee:75:5c:6c:b9  8.999993192   .000013774
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - A trace file containing both requests and responses and ARPs without a response
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./analyze-arps.sh test2.pcapng                                                                   
+analyze-arps.sh test2.pcapng
+Normal responses:
+Request-time   Source-IP      Target-IP      Reply-from-MAC     Reply-time     Delta-time
+15.917106956   192.168.1.1    192.168.1.3    d0:53:49:8d:1c:2f  15.917155008   .000048052
+25.043783488   192.168.1.3    192.168.1.200  00:09:5b:bc:cb:c9  25.044480587   .000697099
+30.044685742   192.168.1.200  192.168.1.3    d0:53:49:8d:1c:2f  30.044733248   .000047506
+59.657344056   192.168.1.1    192.168.1.3    d0:53:49:8d:1c:2f  59.657385777   .000041721
+88.547639368   192.168.1.1    192.168.1.3    d0:53:49:8d:1c:2f  88.547688154   .000048786
+
+No response:
+Number_of_Requests  Source-IP      Target-IP
+1                   0.0.0.0        192.168.1.32
+1                   192.168.1.1    192.168.1.18
+6                   192.168.1.200  192.168.1.49
+348                 192.168.1.206  192.168.1.200
+
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - A trace file containing gratuitous ARPs
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./analyze-arps.sh test3.pcapng                                                                   
+analyze-arps.sh test3.pcapng
+Normal responses:
+Request-time  Source-IP    Target-IP     Reply-from-MAC     Reply-time    Delta-time
+6.964011843   192.168.1.3  192.168.1.48  00:10:75:4f:b3:6e  7.010519541   .046507698
+17.460016837  192.168.1.3  192.168.1.1   ac:9e:17:46:37:b0  17.461627282  .001610445
+
+No response:
+Number_of_Requests  Source-IP     Target-IP
+1                   192.168.1.1   192.168.1.12
+1                   192.168.1.42  192.168.1.1
+1                   192.168.1.42  192.168.1.7
+3                   0.0.0.0       192.168.1.42
+10                  192.168.1.25  192.168.1.1
+17                  192.168.1.7   192.168.1.109
+
+Gratuitous ARPs
+Number-of-ARPs  Source-IP
+1               192.168.1.42
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Example 4 - A trace file containing an unexpected reply, duplicate IP and MAC addresses
+
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./analyze-arps.sh test4.pcapng                                                                   
+analyze-arps.sh test4.pcapng
+Normal responses:
+Request-time  Source-IP      Target-IP      Reply-from-MAC     Reply-time   Delta-time
+0.000000000   0.0.0.0        192.168.1.200  00:09:5b:bc:cb:c9  0.000122445  .000122445
+3.200946555   192.168.1.200  192.168.1.48   00:10:75:4f:b3:6e  3.201130196  .000183641
+
+Unexpected Reply
+at 3.397276376 unexpected reply for 192.168.1.22 from 52:54:00:8a:8b:6d/192.168.1.22
+
+Gratuitous ARPs
+Number-of-ARPs  Source-IP
+2               192.168.1.200
+
+Duplicate IPs
+Frame-Source       ARP.src_hw_mac     Source-IP
+00:09:5b:bc:cb:c9  00:09:5b:bc:cb:c9  192.168.1.200
+52:54:00:8a:8b:6d  52:54:00:8a:8b:6d  192.168.1.200
+
+Duplicate MACs
+ARP.src_hw_mac     Source-IP
+52:54:00:8a:8b:6d  192.168.1.200
+52:54:00:8a:8b:6d  192.168.1.22
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 18-04-18</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
