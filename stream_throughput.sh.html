@@ -18,7 +18,7 @@
 This macro uses tshark to make N+1 passes through a file. The first pass identifies all TCP streams. Then for each stream it calculates the throughput from the last frame's ACK number and dividing by the TCP relative time. Reset frames are excluded since they do not always carry an ACK number.
 <p>
 The Output file has the format
-&nbsp&nbsp&nbsp&nbsp&nbspTCP Stream: N IPSRC:PORTSRC -> IPDST:PORTDST   ACK / TIME = THROUGHPUT Bytes/Sec
+&nbsp&nbsp&nbsp&nbsp&nbspTCP Stream: N IPSRC:PORTSRC &rarr; IPDST:PORTDST   ACK / TIME = THROUGHPUT Bytes/Sec
 <p>
 If the input file is large with many TCP streams it would make sense to first create a file containing just the segments of the TCP stream of interest, assuming you are not interested in all the streams.
 <p>
@@ -60,7 +60,7 @@ stream-throughput.sh test.pcap 10.123.5.61 throughput.out
 stream-throughput.sh run on Wed Jul 26 20:47:56 MST 2017
 stream-throughput.sh version 1.4_2017-07-26
 
-TCP  Stream  0  10.123.5.61:753  ->  10.123.4.165:2049  264990145  /  2.363086000  =  112137325.937354  Bytes/sec
+TCP  Stream  0  10.123.5.61:753  &rarr;  10.123.4.165:2049  264990145  /  2.363086000  =  112137325.937354  Bytes/sec
 </pre>
 </td></tr>
 </table>
@@ -81,10 +81,10 @@ stream-throughput.sh /tmp/test2.pcap 192.168.1.200 throughput.out
 stream-throughput.sh run on Wed Jul 26 20:58:12 MST 2017
 stream-throughput.sh version 1.4_2017-07-26
 
-TCP  Stream  17  192.168.1.200:22  ->  192.168.1.12:37262  9111      /  9.223089000   =  987.846913      Bytes/sec
-TCP  Stream  18  192.168.1.200:22  ->  192.168.1.12:37264  35921567  /  14.336424000  =  2505615.556571  Bytes/sec
-TCP  Stream  19  192.168.1.200:22  ->  192.168.1.12:37266  35921647  /  14.155734000  =  2537603.984364  Bytes/sec
-TCP  Stream  22  192.168.1.200:22  ->  192.168.1.12:37270  35921647  /  13.547399000  =  2651553.039812  Bytes/sec
+TCP  Stream  17  192.168.1.200:22  &rarr;  192.168.1.12:37262  9111      /  9.223089000   =  987.846913      Bytes/sec
+TCP  Stream  18  192.168.1.200:22  &rarr;  192.168.1.12:37264  35921567  /  14.336424000  =  2505615.556571  Bytes/sec
+TCP  Stream  19  192.168.1.200:22  &rarr;  192.168.1.12:37266  35921647  /  14.155734000  =  2537603.984364  Bytes/sec
+TCP  Stream  22  192.168.1.200:22  &rarr;  192.168.1.12:37270  35921647  /  13.547399000  =  2651553.039812  Bytes/sec
 </pre>
 </td></tr>
 </table>
@@ -106,11 +106,14 @@ There are no acknowledgment packets going to the IP source address  192.168.2.20
 Figure 3
 </center>
 <p>
+
+You can find this script at <a href="https://github.com/noahdavids/packet-analysis/blob/master/stream_throughput.sh">stream_throughput.sh</a>
+
 <br /><br />
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 17-07-26</h5>
+This page was last modified on 18-04-25</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
