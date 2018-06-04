@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>ping-time.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>ping-time.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro makes use of the "-p (pad) option of ping to embed 16 characters into an ICMP echo (ping) message. The 16 characters are the current time to the nearest tenth of a micro second and have the format HH:MM:SS.sssssss. This lets you correlate the time recorded by the system which captured a packet trace with the time on the system that sent the packet. This can prevent confusion when the sender records an event at time T and the packet trace or the logs on the capturing system show nothing significant at that time.
+<p>
+
+Note that no output is sent to either STDOUT or STDERR everything is redirected to /dev/null. 
+<p>
+
+This is a special case of the <a href="http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/ping-message.sh.html">ping-message.sh</a> script  which lets you put any 16 character messsage into the ping pad characters.
+<p>
+
+<b><h3>Usage</h3></b>
+ping-time.sh IP-Address_or_Host_Name
+<br><br>
+<b>IP-Address_or_Host_Name</b>
+<br>
+The IP address or host name of the host to send the pings to. You can use the subnet broadcast address so that the ping is sent to all hosts at the same time
+<br><br>
+
+<b><h3>Example</h3></b>
+
+Compare time settings on sending system (192.168.1.207) and receiving system (192.168.1.13)
+<p>
+The ping-time is executed on <span style='color:black;background:#00FFFF'><b>192.168.1.207</b></span> at <span style='color:black;background:#00ff00'><b>17:02:45.5437134</b></span> and captured by <span style='color:black;background:#93A9D5'><b>192.168.1.13</b></span> at <span style='color:black;background:#F8F400'><b>20:02:49.432413273</b></span>. The difference of 3 hours and 3.888699873 seconds can be significant when trying to correllate events on the two systems or just correllating logs from 192.168.1.207 with the packets in the trace file.
+<p>
+
+Note the arguments in the tshark command. The <span style='color:white;background:#009F3C'><b>-P argument</b></span> prints the summary line which includes the frame number and the time that the packet was captured. The <span style='color:white;background:#EF9C00'><b>-x argument</b></span> prints a hex and asci dump of the packet. The <span style='color:white;background:#FF0000'><b>-ta argument</b></span> causes the time on the summary line to be printed as the absolute time without the date. The <span style='color:white;background:#93A9D5'><b>-Y argument</b></span> is the display filter, in this case ICMP type 8 packets, i.e. echo requests and the ping target address of 192.168.1.13. If there are multiple hosts sending pings to the same target you can add in the IP address of the sender.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+[root@<span style='color:black;background:#00FFFF'><b>192.168.1.207</b></span> ~]# ./ping-time.sh 192.168.1.13
+[root@<span style='color:black;background:#00FFFF'><b>192.168.1.207</b></span> ~]#
+
+[root@<span style='color:black;background:#93A9D5'><b>192.168.1.13</b></span> ~]# tshark -r ping-time-example-1.pcapng <span style='color:white;background:#009F3C'><b>-P</b></span> <span style='color:white;background:#EF9C00'><b>-x</b></span> <span style='color:white;background:#FF0000'><b>-ta</b></span> <span style='color:white;background:#93A9D5'><b>-Y "icmp.type == 8 && ip.addr == 192.168.1.13"</b></span>
+   84 <span style='color:black;background:#F8F400'><b>20:02:49.432413273</b></span> 192.168.1.207 → 192.168.1.13 ICMP 74 Echo (ping) request  id=0x2dd2, seq=1/256, ttl=64
+
+0000  10 05 01 46 bb 92 6c 0b 84 67 fe 63 08 00 45 00   ...F..l..g.c..E.
+0010  00 3c 00 00 40 00 40 01 b6 94 c0 a8 01 cf c0 a8   .<..@.@.........
+0020  01 0d 08 00 11 39 2d d2 00 01 a5 98 0c 5b 00 00   .....9-......[..
+0030  00 00 60 5b 08 00 00 00 00 00 31 37 3a 30 32 3a   ..`[......<span style='color:black;background:#00ff00'><b>17:02:</b></span>
+0040  34 35 2e 35 34 33 37 31 33 34                     <span style='color:black;background:#00ff00'><b>45.5437134</b></span>
+[root@<span style='color:black;background:#93A9D5'><b>192.168.1.13</b></span> ~]#
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+You can find this script at <a href="https://github.com/noahdavids/packet-analysis/blob/master/ping-time.sh">ping-time.sh</a>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 18-06-03</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
+
+
+
+c5ak5eomljc3
