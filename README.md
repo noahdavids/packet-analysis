@@ -59,6 +59,10 @@ percent-retransmissions.sh
 ==========================
 For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segments must contain data, i.e.will not identify retransmitted SYNs or FINs without data. See [percent-retransmissions.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/percent-retransmissions.sh.html).
 
+ping-message.sh
+===============
+Send an ICMP echo request (ping) with a 16 character message embedded in it instead of the standard sequence of ascii characaters. See [ping-message.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/ping-message.sh.html).
+
 split-pcap.py
 =============
 Reads X.pcap and creates a set of X.pcap_IP1-Port1_IP2-Port2_split.pcap files, one for each TCP four-tuple. Reads only pcap files not pcapng. Requires Python and the scapy module. See [split-pcap.py.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/split-pcap.py.html).
