@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>ping-message.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>ping-message.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro makes use of the "-p (pad) option of ping to embed 16 characters into an ICMP echo (ping) message. The 16 characters are supplied as an argument to the script
+<p>
+
+When tracing a multipart activity you can use the messages to indicate in the packet stream where 1 activity stops and another starts.
+<p>
+
+Note that no output is sent to either STDOUT or STDERR everything is redirected to /dev/null. 
+<p>
+
+<b><h3>Usage</h3></b>
+ping-message.sh IP-Address_or_Host_Name MESSAGE
+<br><br>
+<b>IP-Address_or_Host_Name</b>
+<br>
+The IP address or host name of the host to send the pings to. You can use the subnet broadcast address so that the ping is sent to all hosts at the same time
+<br><br>
+<b>Message</b>
+<br>
+MESSAGE can be any 16 characaters, if there are spaces the string MUST be enclosed in quotes. Messages longer than 16 characters are truncated at 16 characters. Messages shorter than 16 characters are padded with spaces.
+<br>
+
+<b><h3>Example</h3></b>
+<br>
+
+The ping-message script is executed on 192.168.1.207 in one window while in another window on 192.168.1.207 an ssh connection to 192.168.1.13 is started. The messages "starting connection", "entering password", and "login complete" are sent before the ssh command is executed, at the point where the password is entered and after 192.168.1.13 presents a command prompt. The packet trace shows the messages in the ping requests (the ping replies have been filtered out) and the ssh traffic. The ICMP packets are <span style='color:black;background:#00FFFF'><b>highlighted</b></span> to make them easier to spot. Most of the ssh packets have been manually removed just to keep the trace short.
+<p>
+
+Note that the "starting connection" and "entering password" messages have been truncated to 16 characters, "starting connect" and "entering passwor" while the "login complete" has been padded with spaces, "login complete&nbsp&nbsp"
+<p>
+The tshark command arguments <span style='color:white;background:#009F3C'><b>-P</b></span> forces the summary line to be printed which would normally be suppressed by the <span style='color:white;background:#EF9C00'><b>-O icmp</b></span> argument. The <span style='color:white;background:#EF9C00'><b>-O icmp</b></span> argument will display all the protocol headers in the frame and expand out the details of the ICMP frames and also dump the icmp frames in hex and ascii. The <span style='color:white;background:#93A9D5'><b>-Y</b></span> argument defines the display filter which will display all ICMP packets from 192.168.1.207 to 192.168.1.13, which will just be the requests since the replies will go the other way. It also will display any packets going between 192.168.1.207 and 192.168.1.13 in either direction that are not ICMP packets. The <span style='color:white;background:#FF0000'><b>grep</b></span> at the end will filter out any line not begining with a number. This will leave just the summary lines which start with a frame number and the hex dump of the ICMP frames.
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+[root@192.168.1.207 ~]# ./ping-message.sh 192.168.1.13 "starting connection"
+[root@192.168.1.207 ~]# ./ping-message.sh 192.168.1.13 "entering password"
+[root@192.168.1.207 ~]# ./ping-message.sh 192.168.1.13 "login complete"
+[root@192.168.1.207 ~]# 
+
+[root@192.168.1.207 ~]$ tshark -r ping-message-example.pcapng <span style='color:white;background:#009F3C'><b>-P</b></span> <span style='color:white;background:#EF9C00'><b>-O icmp</b></span> <span style='color:white;background:#93A9D5'><b>-Y "(icmp && ip.src == 192.168.1.207 && ip.dst == 192.168.1.13) ||  (not icmp && ip.addr == 192.168.1.207 && ip.addr == 192.168.1.13)"</b></span> | <span style='color:white;background:#FF0000'><b>grep "^\s*[0-9]"</b></span>
+<span style='color:black;background:#00FFFF'><b>    1 0.000000000 192.168.1.207 → 192.168.1.13 ICMP 74 Echo (ping) request  id=0x19bf, seq=1/256, ttl=64
+0000  45 57 04 00 00 00 00 00 73 74 61 72 74 69 6e 67   EW......starting
+0010  20 63 6f 6e 6e 65 63 74                            connect</b></span>
+    3 6.920659656 192.168.1.207 → 192.168.1.13 TCP 74 56356 → 22 [SYN] Seq=2203520149 Win=29200 Len=0 MSS=1460 SACK_PERM=1 TSval=147797041 TSecr=0 WS=128
+    4 6.920678562 192.168.1.13 → 192.168.1.207 TCP 74 22 → 56356 [SYN, ACK] Seq=503937359 Ack=2203520150 Win=28960 Len=0 MSS=1460 SACK_PERM=1 TSval=3436198391 TSecr=147797041 WS=128
+    5 6.920825554 192.168.1.207 → 192.168.1.13 TCP 66 56356 → 22 [ACK] Seq=2203520150 Ack=503937360 Win=29312 Len=0 TSval=147797041 TSecr=3436198391
+. . . .
+   23 6.977262201 192.168.1.207 → 192.168.1.13 SSHv2 438 Client: Encrypted packet (len=372)
+   24 6.978015835 192.168.1.13 → 192.168.1.207 SSHv2 118 Server: Encrypted packet (len=52)
+   25 7.018149162 192.168.1.207 → 192.168.1.13 TCP 66 56356 → 22 [ACK] Seq=2203522207 Ack=503938889 Win=33152 Len=0 TSval=147797139 TSecr=3436198449
+<span style='color:black;background:#00FFFF'><b>   26 10.383038778 192.168.1.207 → 192.168.1.13 ICMP 74 Echo (ping) request  id=0x19ca, seq=1/256, ttl=64
+0000  a1 2f 0a 00 00 00 00 00 65 6e 74 65 72 69 6e 67   ./......entering
+0010  20 70 61 73 73 77 6f 72                            passwor</b></span>
+   30 18.073088361 192.168.1.207 → 192.168.1.13 SSHv2 214 Client: Encrypted packet (len=148)
+   31 18.078537926 192.168.1.13 → 192.168.1.207 SSHv2 94 Server: Encrypted packet (len=28)
+. . . .
+   44 18.211916817 192.168.1.13 → 192.168.1.207 SSHv2 158 Server: Encrypted packet (len=92)
+   45 18.252117361 192.168.1.207 → 192.168.1.13 TCP 66 56356 → 22 [ACK] Seq=2203522927 Ack=503940513 Win=37120 Len=0 TSval=147808373 TSecr=3436209683
+<span style='color:black;background:#00FFFF'><b>   46 28.823834401 192.168.1.207 → 192.168.1.13 ICMP 74 Echo (ping) request  id=0x19de, seq=1/256, ttl=64
+0000  71 a7 01 00 00 00 00 00 6c 6f 67 69 6e 20 63 6f   q.......login co
+0010  6d 70 6c 65 74 65 20 20                           mplete  </b></span>
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+You can find this script at <a href="https://github.com/noahdavids/packet-analysis/blob/master/ping-message.sh">ping-message.sh</a>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 18-06-03</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
+
