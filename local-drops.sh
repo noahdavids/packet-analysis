@@ -14,9 +14,10 @@
 #
 # The Output file has the format
 #     TCP Seq NNNNNNN Pattern: PPPPPP
-#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
-#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
-#     frame.number tcp.time_relative ip.src ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     Titles
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
 #
 # Multiple frames from the sending IP indicate that the frame was received (or
 # sent) multiple times. The placement of the ACK from the receiving IP indicates
@@ -50,8 +51,14 @@
 #    output if the sequence number is retransmitted multiple times.
 # Version 1.4 June 28, 2017
 #    Added the Pattern string 
+# Version 1.5 July 23, 2017
+#    Added IP TTL to the output
+# Version 1.6 April 20, 2019
+#    Added a title line listing the columns
+#    Redirect broken pipe errors caused by piping tshark output to head to
+#    /dev/null
 
-LOCALDROPSVERSION="1.4_2017-06-28"
+LOCALDROPSVERSION="1.6_2019-04-20"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -146,14 +153,14 @@ do
                    -o tcp.calculate_timestamps:TRUE \
        $DASH "ip.src == $IPSRC && tcp.port == $PORT && tcp.seq <= $x \
        && $x < tcp.nxtseq" -T fields -e frame.number -e tcp.time_relative \
-       -e ip.src -e ip.dst -e tcp.seq -e tcp.ack -e tcp.nxtseq \
+       -e ip.src -e ip.ttl -e ip.dst -e tcp.seq -e tcp.ack -e tcp.nxtseq \
        > /tmp/local_drops_frames
 
    tshark -r $FILE -o tcp.relative_sequence_numbers:FALSE \
                    -o tcp.calculate_timestamps:TRUE \
        $DASH "ip.dst == $IPSRC && tcp.port == $PORT && tcp.ack > $x" \
-       -T fields -e frame.number -e tcp.time_relative -e ip.src -e ip.dst \
-       -e tcp.seq -e tcp.ack -e tcp.nxtseq | head -1 \
+       -T fields -e frame.number -e tcp.time_relative -e ip.src -e ip.ttl \
+       -e ip.dst -e tcp.seq -e tcp.ack -e tcp.nxtseq 2>/dev/null | head -1 \
        >> /tmp/local_drops_frames
 
 
@@ -161,7 +168,8 @@ do
 
    echo TCP Seq: $x Pattern: $(cat /tmp/local_drops_frames-2 | awk -v ipsrc=$IPSRC \
             '{ if ($3 == ipsrc) print "D"; else print "A"}' | tr "\n" "-") >> $OUTFILE
-   cat /tmp/local_drops_frames-2 >> $OUTFILE
+   (echo Frame.num tcp.time.rel ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+   cat /tmp/local_drops_frames-2) | column -t >> $OUTFILE
    echo >> $OUTFILE
 
 done
