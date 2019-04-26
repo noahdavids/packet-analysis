@@ -14,10 +14,10 @@
 #
 # The Output file has the format
 #     TCP Seq NNNNNNN Pattern: PPPPPP
-#     Titles
-#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
-#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
-#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+#     Title-line
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
+#     frame.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
 #
 # Multiple frames from the sending IP indicate that the frame was received (or
 # sent) multiple times. The placement of the ACK from the receiving IP indicates
@@ -26,8 +26,8 @@
 # The pattern string PPPPPP represents the pattern of segments.
 #    D-A-   would indicate the first segment is data followed by an ACK
 #    D-D-A- would be data, data again and then an ACK
-#    D-A-D- would be data and ack and then data again. We do not see the second ACK
-#           because only the first ACK is recorded.
+#    D-A-D- would be data and ack and then data again. We do not see the second 
+#           ACK because only the first ACK is recorded.
 # Counting the unique patterns will give you an idea of the segment loss pattern
 #
 # If the input file is large with many TCP streams it would make sense to first
@@ -57,8 +57,12 @@
 #    Added a title line listing the columns
 #    Redirect broken pipe errors caused by piping tshark output to head to
 #    /dev/null
+# Version 1.7 April 24, 2017
+#    Added the data-len column. This is the difference between then nxt.seq and
+#    seq values. Knowing how much data was sent and then retransmitted can
+#    also be useful 
 
-LOCALDROPSVERSION="1.6_2019-04-20"
+LOCALDROPSVERSION="1.7_2019-04-24"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -168,8 +172,12 @@ do
 
    echo TCP Seq: $x Pattern: $(cat /tmp/local_drops_frames-2 | awk -v ipsrc=$IPSRC \
             '{ if ($3 == ipsrc) print "D"; else print "A"}' | tr "\n" "-") >> $OUTFILE
-   (echo Frame.num tcp.time.rel ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
-   cat /tmp/local_drops_frames-2) | column -t >> $OUTFILE
+   (echo Frame.num tcp.time.rel ip.src ip.ttl ip.dst tcp.seq tcp.ack \
+	   tcp.nxtseq data-len
+   cat /tmp/local_drops_frames-2) | \
+	   awk '{if ($1 ~ "Frame") print $0; else \
+	   print $1 " " $2 " " $3 " " $4 " " $5 " " $6 " " $7 " " $8 \
+	   " " $8-$6}' | column -t >> $OUTFILE
    echo >> $OUTFILE
 
 done

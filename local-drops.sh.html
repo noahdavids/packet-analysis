@@ -25,11 +25,11 @@ TCP Seq NNNNNNN Pattern: PPPPPP
 <br>
 Titles
 <br>
-&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
 <br>
-&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
 <br>
-&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq
+&nbsp&nbsp&nbsp&nbsp&nbspframe.number tcp.time_relative ip.src ip.ttl ip.dst tcp.seq tcp.ack tcp.nxtseq data-len
 <p>
 Multiple frames from the sending IP indicate that the frame was received (or sent) multiple times. The placement of the ACK from the receiving IP indicates when the ACK was sent.
 <p>
@@ -95,31 +95,31 @@ Example 1b - First part of the output file from the above execution. Note it rep
 <tr><td align=left>
 <pre> 
 $ cat local-drops.out
-local-drops.sh retransmissions-remote-sender.pcap 10.13.32.196 65376 local-drops.out                      
-local-drops.sh run on Sun Apr 21 05:41:03 MST 2019
-local-drops.sh version 1.6_2019-04-20
+local-drops.sh retransmissions-remote-sender.pcap 10.13.32.196 65376 local-drops.out
+local-drops.sh run on Thu Apr 25 17:11:22 MST 2019
+local-drops.sh version 1.7_2019-04-24
 
-Number of retransmission 611
+Numer of retransmission 611
 
 TCP Seq: 1401752293 Pattern: D-A-
-Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq
-8          0.683443000   10.13.32.196  62      10.13.12.129  1401752293  127807339   1401752793
-9          0.683452000   10.13.12.129  64      10.13.32.196  127807339   1401754293	
+Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq  data-len
+8          0.683443000   10.13.32.196  62      10.13.12.129  1401752293  127807339   1401752793  500
+9          0.683452000   10.13.12.129  64      10.13.32.196  127807339   1401754293  127807339   0
 
 TCP Seq: 1401760793 Pattern: D-A-
-Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq
-34         3.280608000   10.13.32.196  62      10.13.12.129  1401760793  127807691   1401761293
-35         3.280628000   10.13.12.129  64      10.13.32.196  127807691   1401762293	
+Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq  data-len
+34         3.280608000   10.13.32.196  62      10.13.12.129  1401760793  127807691   1401761293  500
+35         3.280628000   10.13.12.129  64      10.13.32.196  127807691   1401762293  127807691   0
 
 TCP Seq: 1401764793 Pattern: D-A-
-Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq
-51         4.896903000   10.13.32.196  62      10.13.12.129  1401764793  127807851   1401765293
-52         4.896923000   10.13.12.129  64      10.13.32.196  127807851   1401766293	
+Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq  data-len
+51         4.896903000   10.13.32.196  62      10.13.12.129  1401764793  127807851   1401765293  500
+52         4.896923000   10.13.12.129  64      10.13.32.196  127807851   1401766293  127807851   0
 
 TCP Seq: 1401767293 Pattern: D-A-
-Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq
-61         6.129472000   10.13.32.196  62      10.13.12.129  1401767293  127807979   1401767793
-. . . . .
+Frame.num  tcp.time.rel  ip.src        ip.ttl  ip.dst        tcp.seq     tcp.ack     tcp.nxtseq  data-len
+61         6.129472000   10.13.32.196  62      10.13.12.129  1401767293  127807979   1401767793  500
+. . . . . . 
 </pre>
 </td></tr>
 </table>
@@ -171,32 +171,33 @@ Example 2 - trace collected on the sender. Note that the sender IP address 172.2
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
-$ ./local-drops.sh retransmissions.pcap  172.29.26.124 42111 local-drops.out
-local-drops.sh run on Sun Apr 21 05:55:31 MST 2019
-local-drops.sh version 1.6_2019-04-20
+local-drops.sh retransmissions.pcap 172.29.26.124 42111 local-drops.out
+local-drops.sh run on Wed Apr 24 20:46:40 MST 2019
+local-drops.sh version 1.7_2019-04-24
 
-Number of retransmission 244
+Numer of retransmission 244
 
 TCP Seq: 456834933 Pattern: D-D-A-
-Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq
-1326       1.464269000   172.29.26.124  64      172.21.198.87  456834933   2287642059  456836381
-1462       1.537262000   172.29.26.124  64      172.21.198.87  456834933   2287642059  456836381
-1612       1.610243000   172.21.198.87  57      172.29.26.124  2287642059  457081093	
+Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq  data-len
+1326       1.464269000   172.29.26.124  64      172.21.198.87  456834933   2287642059  456836381   1448
+1462       1.537262000   172.29.26.124  64      172.21.198.87  456834933   2287642059  456836381   1448
+1612       1.610243000   172.21.198.87  57      172.29.26.124  2287642059  457081093   2287642059  0
 
 TCP Seq: 457653053 Pattern: D-D-A-
-Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq
-1764       1.684147000   172.29.26.124  64      172.21.198.87  457651605   2287642059  457654501
-1852       1.757244000   172.29.26.124  64      172.21.198.87  457653053   2287642059  457654501
-1912       1.830185000   172.21.198.87  57      172.29.26.124  2287642059  457819573	
+Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq  data-len
+1764       1.684147000   172.29.26.124  64      172.21.198.87  457651605   2287642059  457654501   2896
+1852       1.757244000   172.29.26.124  64      172.21.198.87  457653053   2287642059  457654501   1448
+1912       1.830185000   172.21.198.87  57      172.29.26.124  2287642059  457819573   2287642059  0
 
 TCP Seq: 460237733 Pattern: D-D-A-
-Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq
-3081       3.509171000   172.29.26.124  64      172.21.198.87  460236285   2287642059  460239181
-3119       3.653026000   172.29.26.124  64      172.21.198.87  460237733   2287642059  460239181
-3152       3.726052000   172.21.198.87  57      172.29.26.124  2287642059  460314477	
+Frame.num  tcp.time.rel  ip.src         ip.ttl  ip.dst         tcp.seq     tcp.ack     tcp.nxtseq  data-len
+3081       3.509171000   172.29.26.124  64      172.21.198.87  460236285   2287642059  460239181   2896
+3119       3.653026000   172.29.26.124  64      172.21.198.87  460237733   2287642059  460239181   1448
+3152       3.726052000   172.21.198.87  57      172.29.26.124  2287642059  460314477   2287642059  0
 
 TCP Seq: 461598853 Pattern: D-D-A-
-. . . . .
+. . . . . . .
+
 
 $ cat local-drops.out | grep TCP | awk '{print $5}' | sort | uniq -c
     218 D-D-A-
@@ -216,7 +217,7 @@ You can find this script at <a href="https://github.com/noahdavids/packet-analys
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 19-04-21</h5>
+This page was last modified on 19-04-25</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions
