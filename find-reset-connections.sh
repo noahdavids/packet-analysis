@@ -33,8 +33,14 @@
 #    stream by frame number to get the first reset which is all we care about.
 #    Added a check to figure out if we need "-Y" or "-R" for the filter so
 #    that it doesn't need to be added in the command line.
+# Version 1.4 May 14, 2019
+#    Make sure that the source of the reset is also the source of the FIN
+#    that way you do not have the case of host-A sending a FIN and host-B
+#    responding with a reset.
+#    Sort TCP streams numerically
+#    Print a message if no reset connections found instead of just slience
 
-FINDRESETCONNECTIONSVERSION="1.3_2017-04-29"
+FINDRESETCONNECTIONSVERSION="1.4_2019-05-14"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -98,34 +104,46 @@ tshark -r "$FILE"  $DASH "tcp.flags.fin == 1 || tcp.flags.reset == 1" \
 # Search through the tempoary file for lines corresponding to resets. that
 # is lines where the FIN flag is a 0 and the reset flag is a 1. These are
 # the last 2 fields in the line so it is 0 following by white space followed
-# by 1 and the end of the line. Extract out only column 1 - the TCP stream
-# number. We will iterate over this list or stream numbers.
+# by 1 and the end of the line. Extract out columns 1, 3, and 6 - the TCP stream
+# number and source and destination IP addresses. 
 
-for x in $(egrep "0\s*1$" /tmp/fins-and-resets.out | awk '{print $1}')
+egrep "0\s*1$" /tmp/fins-and-resets.out | \
+	awk '{print $1 " " $3 " " $6}' | while read stream src dst
 
-# For each of the stream numbers found above search for an entry in the temporary
-# file which begins with that stream number and ends with the FIN flag of 1 and
-# the reset flag of 0. Count the number of lines found and then write out the stream
-# number and the line count into an other temporary file
+# For each of the stream number, source, destination found above search for an
+# entry in the temporary file which begins with that stream number includes the source
+# and destination and ends with the FIN flag of 1 and the reset flag of 0. Count the
+# number of lines found and then write out the stream number and the line count into
+# an other temporary file
 
-   do echo $x $(cat /tmp/fins-and-resets.out | egrep "^$x\s+.*1\s*0$" | wc -l)
+   do echo $stream $(cat /tmp/fins-and-resets.out | egrep "^$stream\s.*$src\s.*$dst\s.*1\s*0$" | wc -l)
 done > /tmp/fins-and-resets-2.out
 
 # Search the second temporary file for lines ending with 0, i.e. the line count
 # was 0, i.e. no FINs where found. For each line found read the stream number
 # and the count then search the first temporary file for the stream number and
 # sort on the frame number (second column) and select the first row. Print the
-# stream number, Src IP, Src Port, TCP Seq, Dest IP, and Dst Port.
+# stream number, Src IP, Src Port, TCP Seq, Dest IP, and Dst Port. To a 
+# temporary file
 
 grep "0$" /tmp/fins-and-resets-2.out | while read stream count
      do egrep "^$stream\s+" /tmp/fins-and-resets.out | sort -nk2 | head -1 | \
      awk '{print $1 " " $3 " " $4 " " $5 " " $6 " " $7}'
-done | sort -u | column -t
+done | sort -u | column -t > /tmp/fins-and-resets-3.out
+
+# If one or more reset connections found display the connections sorted by
+# stream number else print a message indicating no reset connections found
+
+if [ 1 -eq $(head -1 /tmp/fins-and-resets-3.out | wc -l) ]
+   then sort -nk1 /tmp/fins-and-resets-3.out
+   else echo "No reset connections found"
+fi
 
 # clean-up temorary files
 
 rm /tmp/fins-and-resets.out
 rm /tmp/fins-and-resets-2.out
+rm /tmp/fins-and-resets-3.out
 
 # find-reset-connections.sh ends here
 
