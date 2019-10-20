@@ -17,14 +17,22 @@
 <p>
 This macro uses tshark to find DNS (port 53) queries and calculate the time between query and response. It differs from the dns.time value calculated by wireshark in that it calculates the time between the first response for transaction ID X and the first query for transaction X not the first response and last query for transaction X.
 <p>
-The output is a table with the following columns.
+Three tables are output
+<p>
+The first shows the response time of a server to a query, the columns are<br>
+&nbsp&nbsp&nbsp&nbspServer ID Type Name Rcode Response-time - Query-time = Delta-time<p>
+The second is a list of unanswered queries, the columns are<br>
+&nbsp&nbsp&nbsp&nbspServer ID Type Name Query-time<p>
+Table 3 takes into account that the client may be using multiple name servers. If a query to the first name server times out and the query to the second name server gets a response the timing listed in table 1 is misleading from the perspective of the application making the query. Table 3 takes this into account, the columns are<br>
+&nbsp&nbsp&nbsp&nbspClient ID Type Name Rcode Response-time - Query-time = Delta-time<br>
 <br>
-&nbsp&nbsp&nbsp&nbspServer ID Type Name Rcode Response-time - Query-time = Delta-time
 <br>
 Where:
 <ul>
 <li>server
 <br>&nbsp&nbsp&nbsp&nbsp&nbspIP address of the server the request is sent to</li>
+<li>client
+<br>&nbsp&nbsp&nbsp&nbsp&nbspIP address of the client sending the request</li>
 <li>ID
 <br>&nbsp&nbsp&nbsp&nbsp&nbspThis is the DNS ID of the query</li>
 <li>Type
@@ -53,9 +61,6 @@ Where:
 <br>&nbsp&nbsp&nbsp&nbsp&nbspThe time between Response-time  and Query-time</li>
 </ul>
 <p>
-It also lists unanswered queries in the table
-<br>
-&nbsp&nbsp&nbsp&nbsp&nbspServer ID Type Name Query-time
 
 
 <b><h3>Usage</h3></b>
@@ -72,43 +77,46 @@ Example 1 - Execute dns-time.sh
 <table border=5>
 <tr><td align=left>
 <pre>                                                                   
-$ ./dns-time.sh dns-2.pcap 
-dns-time.sh /cloud/seagate/packet-trace-library/dns-2.pcap
+$ ./dns-time.sh dns-5.pcap
+dns-time.sh dns-5.pcap
 Server       ID          Type  Name                          Rode  Respose-time        -  Query-time          =  Delta-time
-192.168.1.1  0x00000938  1     subscription.rhsm.redhat.com  0     16:47:18.954770787  -  16:47:18.954321824  =  0.000448942
-192.168.1.1  0x000011b9  1     d.dropbox.com                 0     16:46:18.311503201  -  16:46:18.232357317  =  0.0791459
-192.168.1.1  0x00001302  1     subscription.rhsm.redhat.com  0     16:47:17.950767160  -  16:47:17.950227048  =  0.000540257
-192.168.1.1  0x000013ae  1     subscription.rhsm.redhat.com  0     16:46:17.938781144  -  16:46:17.938380590  =  0.000400782
-192.168.1.1  0x00001418  12    196.193.58.216.in-addr.arpa   0     16:47:04.081949744  -  16:47:03.401008730  =  0.680941
-192.168.1.1  0x00003b25  1     subscription.rhsm.redhat.com  0     16:47:18.676233199  -  16:47:18.675692420  =  0.000540972
-192.168.1.1  0x00004b96  28    subscription.rhsm.redhat.com  0     16:47:18.953927717  -  16:47:18.952111412  =  0.00181627
-192.168.1.1  0x000061e3  1     client.dropbox.com            0     16:46:17.820613668  -  16:46:17.558599440  =  0.262014
-192.168.1.1  0x000063c4  1     subscription.rhsm.redhat.com  0     16:47:18.678505569  -  16:47:18.678054622  =  0.000451088
-192.168.1.1  0x0000658b  1     log.getdropbox.com            0     16:46:18.220943881  -  16:46:17.842960949  =  0.377983
-192.168.1.1  0x000077f8  1     www.google.com                0     16:46:00.577802806  -  16:46:00.577284082  =  0.000518799
-192.168.1.1  0x00007bb8  28    subscription.rhsm.redhat.com  0     16:46:17.937824958  -  16:46:17.935915704  =  0.00190926
-192.168.1.1  0x0000836f  28    subscription.rhsm.redhat.com  0     16:47:17.952087425  -  16:47:17.950249823  =  0.00183749
-192.168.1.1  0x00009177  28    log.getdropbox.com            0     16:46:18.219846662  -  16:46:17.842980113  =  0.376867
-192.168.1.1  0x000095a7  1     client.dropbox.com            0     16:46:17.833987986  -  16:46:17.833496370  =  0.000491619
-192.168.1.1  0x00009dfc  1     d.dropbox.com                 0     16:46:18.318778544  -  16:46:18.318290966  =  0.000487566
-192.168.1.1  0x0000c703  1     subscription.rhsm.redhat.com  0     16:47:17.953157771  -  16:47:17.952694842  =  0.00046277
-192.168.1.1  0x0000d723  1     subscription.rhsm.redhat.com  0     16:46:17.936377046  -  16:46:17.935893457  =  0.000483513
-192.168.1.1  0x0000eb56  28    subscription.rhsm.redhat.com  0     16:47:18.677787506  -  16:47:18.675716649  =  0.0020709
-192.168.1.1  0x0000ef21  1     subscription.rhsm.redhat.com  0     16:47:18.952594812  -  16:47:18.952089720  =  0.000504971
-192.168.1.1  0x0000f661  1     www.google.com                0     16:47:03.363154341  -  16:47:03.362609063  =  0.000545263
+192.168.1.1  0x0000525b  1     www.google.com                0     07:05:56.232112682  -  07:05:56.200239463  =  0.0318732
+192.168.1.1  0x000055ea  1     www.yahoo.com                 0     07:07:03.773782319  -  07:07:03.750152377  =  0.0236299
+192.168.1.1  0x0000782e  28    shavar.services.mozilla.com   0     07:06:46.897537139  -  07:06:46.867333311  =  0.0302038
+192.168.1.1  0x00008fae  12    68.14.217.172.in-addr.arpa    0     07:06:01.293080000  -  07:06:01.268887445  =  0.0241926
+192.168.1.1  0x0000ad3e  12    105.183.132.209.in-addr.arpa  0     07:06:31.359399184  -  07:06:31.330053050  =  0.029346
+192.168.1.1  0x0000b138  1     shavar.services.mozilla.com   0     07:06:46.890625342  -  07:06:46.867178884  =  0.0234463
+192.168.1.1  0x0000c88e  12    7.246.137.98.in-addr.arpa     0     07:07:08.854469819  -  07:07:08.831062646  =  0.0234072
+192.168.1.1  0x0000d716  1     shavar.services.mozilla.com   0     07:06:46.893694560  -  07:06:46.867324151  =  0.0263705
+192.168.1.1  0x0000f75d  1     redhat.com                    0     07:06:26.290750842  -  07:06:26.261252426  =  0.0294983
 
 
 Unanswered queries
-Server         ID          Type  Name                         Query-time
-192.168.1.207  0x000077f8  1     www.google.com               16:46:00.576924898
-192.168.1.207  0x000061e3  1     client.dropbox.com           16:46:17.558374417
-192.168.1.207  0x000095a7  1     client.dropbox.com           16:46:17.833305899
-192.168.1.207  0x0000658b  1     log.getdropbox.com           16:46:17.842769112
-192.168.1.207  0x00009177  28    log.getdropbox.com           16:46:17.842792261
-192.168.1.207  0x000011b9  1     d.dropbox.com                16:46:18.232145014
-192.168.1.207  0x00009dfc  1     d.dropbox.com                16:46:18.318077978
-192.168.1.207  0x0000f661  1     www.google.com               16:47:03.362349646
-192.168.1.207  0x00001418  12    196.193.58.216.in-addr.arpa  16:47:03.400765819
+
+Server         ID          Type  Name                          Query-time
+192.168.1.200  0x0000525b  1     www.google.com                07:05:51.194929081
+192.168.1.200  0x00008fae  12    68.14.217.172.in-addr.arpa    07:05:56.263587445
+192.168.1.200  0x0000f75d  1     redhat.com                    07:06:21.255980379
+192.168.1.200  0x0000ad3e  12    105.183.132.209.in-addr.arpa  07:06:26.324725277
+192.168.1.200  0x0000d716  1     shavar.services.mozilla.com   07:06:41.860566608
+192.168.1.200  0x0000782e  28    shavar.services.mozilla.com   07:06:41.860675267
+192.168.1.200  0x0000b138  1     shavar.services.mozilla.com   07:06:41.860713529
+192.168.1.200  0x000055ea  1     www.yahoo.com                 07:06:58.744870465
+192.168.1.200  0x0000c88e  12    7.246.137.98.in-addr.arpa     07:07:03.825721570
+
+
+Applilcation observered delay for answered queries
+
+Client         ID          Type  Name                          Rode  Respose-time        -  Query-time          =  Delta-time
+192.168.1.152  0x0000525b  1     www.google.com                0     07:05:56.232112682  -  07:05:51.194929081  =  5.03718
+192.168.1.152  0x000055ea  1     www.yahoo.com                 0     07:07:03.773782319  -  07:06:58.744870465  =  5.02891
+192.168.1.152  0x0000782e  28    shavar.services.mozilla.com   0     07:06:46.897537139  -  07:06:41.860675267  =  5.03686
+192.168.1.152  0x00008fae  12    68.14.217.172.in-addr.arpa    0     07:06:01.293080000  -  07:05:56.263587445  =  5.02949
+192.168.1.152  0x0000ad3e  12    105.183.132.209.in-addr.arpa  0     07:06:31.359399184  -  07:06:26.324725277  =  5.03467
+192.168.1.152  0x0000b138  1     shavar.services.mozilla.com   0     07:06:46.890625342  -  07:06:41.860713529  =  5.02991
+192.168.1.152  0x0000c88e  12    7.246.137.98.in-addr.arpa     0     07:07:08.854469819  -  07:07:03.825721570  =  5.02875
+192.168.1.152  0x0000d716  1     shavar.services.mozilla.com   0     07:06:46.893694560  -  07:06:41.860566608  =  5.03313
+192.168.1.152  0x0000f75d  1     redhat.com                    0     07:06:26.290750842  -  07:06:21.255980379  =  5.03477
 </pre>
 </td></tr>
 </table>
@@ -122,7 +130,7 @@ You can find this script at <a href="https://github.com/noahdavids/packet-analys
 <h5><center>
 <img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
 <br />
-This page was last modified on 18-04-25</h5>
+This page was last modified on 2019-10-20</h5>
 </center>
 <a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
 Send comments and suggestions

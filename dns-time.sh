@@ -7,12 +7,22 @@
 # response for transaction ID X and the first query for transaction X not
 # the first response and last query for transaction X.
 #
-# The output is a a table with the following columns.
+# The output is three tables.
+#
+# The first table is how fast a name server responded toa query. It has the
+# following columns.
 #     Server ID Type Name Rcode Response-time - Query-time = Delta-time
 #
-# It also lists unanswered queries in the table
+# The second table list unanswered queries. It has the columns
 #     Server ID Type Name Query-time
 #
+# The third table takes into account what the application making the query
+# sees if the client uses multiple name servers and the first servers do not
+# respond. If the client uses only 1 name server this table and table 1 should
+# be identical. Also if the client uses a different transaction ID for each
+# name server this table will be inaccurate. The columns for this table are
+#     Client ID Type Name Rcode Response-time - Query-time = Delta-time
+
 # Type ==  1 Type A host address
 # Type == 12 domain name PRT query
 # Type == 28 Type AAAA IPv6 host address
@@ -38,8 +48,12 @@
 #    Added the dns.flags.rcode to the output to distinguish between a 
 #    response that actually provided an answer and one which did not. Also
 #    added some comments for various DNS types and rcodes.
+# Version 1.6 October 20, 2019
+#    Added a third table to take into account what the application sees if
+#    the client host uses multiple name servers and the first servers do not
+#    respond. Thank you to Curtis Taylor for pointing out this omission. 
 
-DNSTMEVERSION="1.5_2018-02-11"
+DNSTMEVERSION="1.6_2019-10-20"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -156,6 +170,7 @@ awk '($11 == 1) {print $8 " " $9 " " $10 " " $12 " " $13 " " $14}' \
 echo
 echo
 echo Unanswered queries
+echo
 
 # First echo a table header line
 
@@ -175,11 +190,46 @@ awk '($11 == 0) {print $6 " " $8 " " $9 " " $10 " " $12 " " $13}' /tmp/dns-time-
       fi
    done) | column -t
 
+
+# Now caculate the response time as seen by the application making the query.
+# The difference is that only the client, transaction id, name, type are taken
+# into consideration, not the server. So a client with multiple name servers 
+# makes a query to server 1 which does not answer and after a time out it makes
+# the same query to server 2 which answers in 100 ms the above tables will show
+# that server 2 answered in 100 ms and server 1 did not answer BUT the
+# application sees a respnse in time-out*(number-of-queries) + 0.1 seconds.
+
+awk '($11 == 1) {print $9 " " $10 " " $12 " " $13 " " $14}' \
+    /tmp/dns-time-1 | sort -u | while read client id name type rcode
+   do
+       grep $client.*$id.*0.*$name.*$type /tmp/dns-time-1 | \
+       awk '{print $2 " " $6}' | head -1 > /tmp/dns-time-4
+       grep $client.*$id.*1.*$name.*$type /tmp/dns-time-1 | \
+       awk '{print $2 " " $6}' | head -1 >> /tmp/dns-time-4
+       if [ $(cat /tmp/dns-time-4 | wc -l) -eq 2 ] 
+          then echo $client $id $type $name $rcode \
+            $(cat /tmp/dns-time-4 | tr "\n" " " | \
+                    awk '{print $4 " - " $2 " = " $3-$1}')
+       fi
+       done > /tmp/dns-time-5
+
+echo
+echo
+echo "Applilcation observered delay for answered queries"
+echo
+
+(echo Client ID Type Name Rode Respose-time - Query-time = Delta-time
+ cat /tmp/dns-time-5) | column -t
+
+
+
 # clean up the temporary files
 
 rm /tmp/dns-time-1
 rm /tmp/dns-time-2
 rm /tmp/dns-time-3
+rm /tmp/dns-time-4
+rm /tmp/dns-time-5
 
 # dns-time.sh stops here
 
