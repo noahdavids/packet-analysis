@@ -16,7 +16,7 @@ Calcuate the bytes in flight after each ACK. See [bytes-in-flight.sh.html](http:
 
 dns-time.sh
 ===========
-Create a table of DNS server query response times and list of unanswered queries. See [bytes-in-flight.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/dns-time.sh.html).
+Create a table of DNS server query response times and list of unanswered queries. See [dns-time.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/dns-time.sh.html).
 
 failed-connection-attempts.sh
 =============================
@@ -59,14 +59,13 @@ percent-retransmissions.sh
 ==========================
 For every connection in the trace file calculate the percentage of retransmissions for every source IP address as retransmissions / not-retransmitted source segments. segments must contain data, i.e.will not identify retransmitted SYNs or FINs without data. See [percent-retransmissions.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/percent-retransmissions.sh.html).
 
-ping-time.sh
-===============
-Send an ICMP echo request (ping) with a 16 character time stamp (HH:MM:SS.sssssssss) embedded in it instead of the standard sequence of ascii characaters. See [ping-time.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/ping-time.sh.html).
-
-
 ping-message.sh
 ===============
 Send an ICMP echo request (ping) with a 16 character message embedded in it instead of the standard sequence of ascii characaters. See [ping-message.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/ping-message.sh.html).
+
+ping-time.sh
+===============
+Send an ICMP echo request (ping) with a 16 character time stamp (HH:MM:SS.sssssssss) embedded in it instead of the standard sequence of ascii characaters. See [ping-time.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/ping-time.sh.html).
 
 split-pcap.py
 =============
