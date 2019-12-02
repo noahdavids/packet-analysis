@@ -14,6 +14,10 @@ bytes-in-flight.sh
 ==================
 Calcuate the bytes in flight after each ACK. See [bytes-in-flight.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/bytes-in-flight.sh.html).
 
+check-subnet.sh
+==================
+Checks to see an IP address is part of a subnet or not. See [check-subnet.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/check-subnet.sh.html).
+
 dns-time.sh
 ===========
 Create a table of DNS server query response times and list of unanswered queries. See [dns-time.sh.html](http://htmlpreview.github.com/?https://github.com/noahdavids/packet-analysis/blob/master/dns-time.sh.html).
