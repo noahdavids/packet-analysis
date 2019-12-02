@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252" />
+<title>check-subnet.sh Information</title>
+</head>
+
+<body background="concret.jpg">
+<center>
+<h1>check-subnet.sh Information</h1>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+</center>
+<p>
+This macro compares a target IPv4 address with a subnet of the form X.X.X.X/NN and prints out TRUE if the target in in the subnet and FALSE if it is not. Its simple to do for 1 or 2 addresses and 1 or 2 subnets but if you have many addresses or subnets you do not want to do it by eyeball. It relies on ipcalc to determine the address range of the subnet.
+<p>
+
+There appear to be two versions of ipcalc depending on the OS distribution. In one you can can request the network and broadcast addresses while in  the other you get the Host minimum and maximum addresses.
+<p>
+Output has the format of:
+<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspIP-Address Subnet HostMin=IP-Address HostMax=IP-Address [TRUE|FALSE]<br>
+&nbsp&nbsp&nbsp&nbspor<br>
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspIP-Address Subnet Network=IP-Address Broadcast=IP-Address [TRUE|FALSE]
+<p>
+<b><h3>Usage</h3></b>
+check-subnet.sh IP-Address SUBNET
+<br><br>
+<b>IP-Address</b>
+<br>
+Standard IP address in dotted decimal format, i.e. A.B.C.D
+<br><br>
+<b>SUBNET</b>
+<br>
+Subnet address in dotted decimal format/prefix, i.e. A.B.C.D/NN
+<br><br>
+
+<b><h3>Examples</h3></b>
+Example 1 - executed on Ubuntu 18.04.3 LTS, ipcalc version 0.41
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./check-subnet.sh 1.1.1.63 1.1.1.1/26                                        
+1.1.1.63 1.1.1.1/26 HostMin=1.1.1.1 HostMax=1.1.1.62  FALSE
+
+$ ./check-subnet.sh 1.1.1.61 1.1.1.1/26
+1.1.1.61 1.1.1.1/26 HostMin=1.1.1.1 HostMax=1.1.1.62  TRUE
+</pre>
+</td></tr>
+</table>
+Figure 1
+</center>
+<p>
+
+Example 2 - executed on Red Hat Enterprise Linux 7.5, ipcalc part of the initscripts-9.49.41-1.el7 package
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./check-subnet.sh 1.1.1.63 1.1.1.1/26                                        
+1.1.1.63 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  FALSE
+
+$ ./check-subnet.sh 1.1.1.61 1.1.1.1/26
+1.1.1.61 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  TRUE
+</pre>
+</td></tr>
+</table>
+Figure 2
+</center>
+<p>
+
+Example 3 - executed on Red Hat Enterprise Linux 8.0, ipcalc version ipcalc 0.2.4
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./check-subnet.sh 1.1.1.63 1.1.1.1/26                                        
+1.1.1.63 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  FALSE
+
+$ ./check-subnet.sh 1.1.1.61 1.1.1.1/26
+1.1.1.61 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  TRUE
+</pre>
+</td></tr>
+</table>
+Figure 3
+</center>
+<p>
+
+Example 4 - executed on Fedora 28, ipcalc version 0.2.3
+<center>
+<table border=5>
+<tr><td align=left>
+<pre>                                                                   
+$ ./check_subnet.sh 1.1.1.63 1.1.1.1/26                                        
+1.1.1.63 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  FALSE
+
+$ ./check_subnet.sh 1.1.1.61 1.1.1.1/26
+1.1.1.61 1.1.1.1/26 Netowork=1.1.1.0 Broadcast=1.1.1.63  TRUE
+</pre>
+</td></tr>
+</table>
+Figure 4
+</center>
+<p>
+
+
+You can find this script at <a href="https://github.com/noahdavids/packet-analysis/blob/master/check-subnet.sh">check-subnet.sh</a>
+
+<br /><br />
+<h5><center>
+<img src="bluebar.gif" width="576" height="14" alt="Blue Bar separator">
+<br />
+This page was last modified on 2019-12-01</h5>
+</center>
+<a href="mailto:noah@noahdavids.org"><img src="mailbox.gif" width="32" height="32" alt="mailbox" align="left" hspace=3>
+Send comments and suggestions
+<br />
+to noah@noahdavids.org
+</a>
+</body>
+
+</html>
