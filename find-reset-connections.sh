@@ -39,8 +39,13 @@
 #    responding with a reset.
 #    Sort TCP streams numerically
 #    Print a message if no reset connections found instead of just slience
+# Version 1.5 Feb 18, 2020
+#    Previous version introduced a bug where when the FIN is sent by host A
+#    and the reset is sent from host B the line reported is the FIN not the
+#    reset so while it still reported the correct stream it source and
+#    destination were reversed.
 
-FINDRESETCONNECTIONSVERSION="1.4_2019-05-14"
+FINDRESETCONNECTIONSVERSION="1.5_2020-02-18"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -127,7 +132,7 @@ done > /tmp/fins-and-resets-2.out
 # temporary file
 
 grep "0$" /tmp/fins-and-resets-2.out | while read stream count
-     do egrep "^$stream\s+" /tmp/fins-and-resets.out | sort -nk2 | head -1 | \
+     do egrep "^$stream\s+.*1$" /tmp/fins-and-resets.out | sort -nk2 | head -1 | \
      awk '{print $1 " " $3 " " $4 " " $5 " " $6 " " $7}'
 done | sort -u | column -t > /tmp/fins-and-resets-3.out
 
