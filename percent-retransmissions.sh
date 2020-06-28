@@ -2,7 +2,7 @@
 # percent-retransmissions.sh begins on the previous line
 
 # This macro uses tshark to calculate the percentage of retransmitted packets
-# in a packet trace. Claculation is based on the soutrce IP address and
+# in a packet trace. Calculation is based on the soutrce IP address and
 # tshark stream number. The calculation is the number of retransmitted segments
 # containing data from a given IP address in a given TCP stream divided by the
 # number of not retransmitted segments containing data from that host in that
@@ -42,7 +42,7 @@ PERCENTRETRANSMISSIONS="1.1_2017-06-01"
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-if [ $# -ne 1 ]
+if [ $# -ne 1 -a $# -ne 2 ]
    then echo "Usage:"
         echo "   percent-retransmissions.sh FILE"
         echo "      FILE is the name of the trace file to be analyzed"
@@ -53,6 +53,7 @@ fi
 
 FILE="$1"
 
+CSV="$2" 
 
 if [ ! -e $FILE ]
    then echo "Could not find input file $FILE"
@@ -79,7 +80,7 @@ echo percent-retransmissions.sh "$FILE"
 
 tshark -r $FILE -Y "tcp.len > 0" -T fields -e tcp.stream \
           -e ip.src -e tcp.srcport -e ip.ttl -e ip.dst -e tcp.dstport \
-          -e tcp.analysis.retransmission | sort | uniq -c \
+          -e tcp.analysis.retransmission -e tcp.analysis.out_of_order | sort | uniq -c \
           > /tmp/percent-retransmissions-1
 
 # scan temporary file for retransmissions (column 8 > 0) and write those lines
@@ -97,16 +98,30 @@ awk '($8 > 0) {print $0}' /tmp/percent-retransmissions-1 > \
 cat /tmp/percent-retransmissions-2 | \
    while read count stream sip sp ttl dip dp retran; do 
      egrep "$stream\s*$sip\s*$sp\s*$ttl\s*$dip\s*$dp" \
-        /tmp/percent-retransmissions-1 | tr "\n" " "; echo; done > \
+        /tmp/percent-retransmissions-1 | awk 1 ORS=' ' ; echo; done > \
         /tmp/percent-retransmissions-3
+
+cat /tmp/percent-retransmissions-3 | uniq > /tmp/percent-retransmissions-4
 
 # Finally, for each line in temporary file -3 extract out the not-retransmitted
 # count, the TCP stream source IP/port and destination IP/port, the TTL and the
-# retransmition count and write a formated line showing that and the calcuated
+# retransmission count and write a formated line showing that and the calcuated
 # retransmission percentage
 
-awk '{print "Stream: " $2 " " $3 ":" $4 " -> " $6 ":" $7 " TTL: " $5 " " \
-        $8 "/" $1 "*100 = " $8/$1*100}' /tmp/percent-retransmissions-3
+if [ -z $CSV ]
+then
+awk '{print "Stream: " $2 " " $3 ":" $4 " -> " $6 ":" $7 " " \
+         " retrans+out_of_order " $8+$16 "/" $1 " "  ($8+$16)/$1*100 \
+         " retrans " $16 "/" $1 " " $16/$1*100  \
+         " out_of_order " $8 "/" $1 " " $8/$1*100}' /tmp/percent-retransmissions-4
+else
+echo "Stream,Server,Client,TotalPackets,%retrans_out_of_order,count_retrans_out_of_order,%Retrans,count_retrans,%out_Of_order,count_out_of_order"
+awk '{print  $2 "," $3 ":" $4 "," $6 ":" $7 "," $1 "," \
+         ($8+$16)/$1*100 "," $8+$16 "," \
+         $16/$1*100 "," $16 "," \
+         $8/$1*100 "," $8 }' /tmp/percent-retransmissions-4
+fi
+
 
 #
 # percent-retransmissions.sh ends here
