@@ -44,8 +44,11 @@
 #    and the reset is sent from host B the line reported is the FIN not the
 #    reset so while it still reported the correct stream it source and
 #    destination were reversed.
-
-FINDRESETCONNECTIONSVERSION="1.5_2020-02-18"
+# Version 1.6 March 23, 2022
+#    Fix bug which would incorrectly identify as a reset connection where
+#    Host A sends a FIN host B sends data host A sends a reset but then 
+#    Host B sends a reset.
+FINDRESETCONNECTIONSVERSION="1.6_2022-03-23"
 
 # from https://github.com/noahdavids/packet-analysis.git
 
@@ -110,10 +113,12 @@ tshark -r "$FILE"  $DASH "tcp.flags.fin == 1 || tcp.flags.reset == 1" \
 # is lines where the FIN flag is a 0 and the reset flag is a 1. These are
 # the last 2 fields in the line so it is 0 following by white space followed
 # by 1 and the end of the line. Extract out columns 1, 3, and 6 - the TCP stream
-# number and source and destination IP addresses. 
+# number and source and destination IP addresses. The sort makes sure that only
+# the first instance is used. 
 
 egrep "0\s*1$" /tmp/fins-and-resets.out | \
-	awk '{print $1 " " $3 " " $6}' | while read stream src dst
+	awk '{print $1 " " $3 " " $6}' | \
+        sort -nuk1 | while read stream src dst
 
 # For each of the stream number, source, destination found above search for an
 # entry in the temporary file which begins with that stream number includes the source
