@@ -75,30 +75,33 @@ echo percent-retransmissions.sh "$FILE"
 # Find all data segments and display the TCP Stream, source IP, source port,
 # TTL, destination IP and destination port and retransmission flag
 # -- NOTE -- that this will not find SYN or FIN segments without data
-# sort and then count them and write the results to a temporary file -1
+# sort and then count them and write the results to a temporary file -1 (and 
+# change permissions to 666)
 
 tshark -r $FILE -Y "tcp.len > 0" -T fields -e tcp.stream \
           -e ip.src -e tcp.srcport -e ip.ttl -e ip.dst -e tcp.dstport \
           -e tcp.analysis.retransmission | sort | uniq -c \
-          > /tmp/percent-retransmissions-1
+          > /tmp/percent-retransmissions-1 ; chmod 666 /tmp/percent-retransmissions-1
 
 # scan temporary file for retransmissions (column 8 > 0) and write those lines
-# to temporary file -2
+# to temporary file -2 (and change permissions to 666)
+
 
 awk '($8 > 0) {print $0}' /tmp/percent-retransmissions-1 > \
-     /tmp/percent-retransmissions-2
+     /tmp/percent-retransmissions-2 ; chmod 666 /tmp/percent-retransmissions-2
 
 
 # For each line in temporary file -2 find the lines in temporary file -1 that
 # match all the fields except the count and retransmission flag. There will
 # always be two lines since there has to be at least 1 un-retransmitted line.
-# combine those two lines into 1 line and write temporary file -3
+# combine those two lines into 1 line and write temporary file -3 (and 
+# change permissions to 666)
 
 cat /tmp/percent-retransmissions-2 | \
    while read count stream sip sp ttl dip dp retran; do 
      egrep "$stream\s*$sip\s*$sp\s*$ttl\s*$dip\s*$dp" \
         /tmp/percent-retransmissions-1 | tr "\n" " "; echo; done > \
-        /tmp/percent-retransmissions-3
+        /tmp/percent-retransmissions-3 ; chmod 666 /tmp/percent-retransmissions-3
 
 # Finally, for each line in temporary file -3 extract out the not-retransmitted
 # count, the TCP stream source IP/port and destination IP/port, the TTL and the
@@ -107,6 +110,9 @@ cat /tmp/percent-retransmissions-2 | \
 
 awk '{print "Stream: " $2 " " $3 ":" $4 " -> " $6 ":" $7 " TTL: " $5 " " \
         $8 "/" $1 "*100 = " $8/$1*100}' /tmp/percent-retransmissions-3
+
+# Afer the script runs, let's clean up /tmp/
+rm /tmp/percent-retransmissions*
 
 #
 # percent-retransmissions.sh ends here
